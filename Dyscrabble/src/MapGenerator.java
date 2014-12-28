@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
 
@@ -30,7 +31,6 @@ public class MapGenerator {
 		}
 		
 		for (int i = 0; i < 26; i++)  indexList[i] = new ArrayList<StoreIndex>();
-
 		
 		//words parsing
 		for (int i = 0; i < words.length; i++ ) {
@@ -43,16 +43,26 @@ public class MapGenerator {
 			
 		}
 		
-		for (int i = 0; i < 26; i++) {
-			ArrayList<StoreIndex> temp = (ArrayList<StoreIndex>) indexList[i];
-			System.out.printf("%c\n", i+'a');
-			for (int j = 0; j < temp.size(); j++) {
-				StoreIndex tempIndex = temp.get(j);
-				System.out.print(Integer.toString(tempIndex.wordIndex) + ' ' + Integer.toString(tempIndex.alphIndex));
-				System.out.println();
-			}
-			System.out.println();
+		//randomly pick a word and put the alphabets in the wait queue.
+		int pick = (int) (Math.random()*5);
+		
+		int length = words[pick].length();
+		
+		for (int i = 0; i< length; i++) {
+			 StoreIndex temp = new StoreIndex(pick, i);
+			 waitQueue.offer(temp);
 		}
+		
+		
+//		for (int i = 0; i < 26; i++) {
+//			ArrayList<StoreIndex> temp = (ArrayList<StoreIndex>) indexList[i];
+//			System.out.printf("%c\n", i+'a');
+//			for (int j = 0; j < temp.size(); j++) {
+//				StoreIndex tempIndex = temp.get(j);
+//				System.out.print(Integer.toString(tempIndex.wordIndex) + ' ' + Integer.toString(tempIndex.alphIndex));
+//				System.out.println();
+//			}
+//			System.out.println();
+//		}
 	}
-
 }
