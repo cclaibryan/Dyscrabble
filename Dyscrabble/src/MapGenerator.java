@@ -1,36 +1,88 @@
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Queue;
-import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import sun.tools.tree.ThisExpression;
-
-import com.apple.eawt.AppEvent.PrintFilesEvent;
-import com.sun.medialib.mlib.Image;
-import com.sun.org.apache.bcel.internal.generic.NEW;
-
-
 public class MapGenerator {
-	public static int MAX_SIZE = 20;
-	public static BasicNode[][] scrabbleMap = new BasicNode[MAX_SIZE][MAX_SIZE]; 	//map declaration
-	public static String[] words = new String[] {"constitution", "professional", "pineapple", "proselytize", "presume","tyrande","japordize","westland","probability","tricky"};
-	public static boolean[] picks = new boolean[] {false, false, false, false, false,false, false, false, false, false};
+	private int maxSize;					//size of the map
+	private BasicNode[][] scrabbleMap;		//the map
+	private String[] words;					//the words input
+	private boolean[] picks;				//whether the words are picked
 	
-	public static Object[] indexList = new Object[26];
-	public static Queue<BasicNode> waitQueue = new LinkedBlockingQueue<BasicNode>();
+	private Object[] indexList = new Object[26];		//database for parsing words
+	private Queue<BasicNode> waitQueue = new LinkedBlockingQueue<BasicNode>();	//BFS queue
 	
-	/**
-	 * @param args
-	 */
+	//Assess parameters
+	float leftBound,rightBound,upBound,lowBound;
+	int crossNum,wordsUsed;
+	float totalMark = 0f;	//highest map mark
+	
+	//constructor
+	public MapGenerator(String[] words,int size) {
+		this.maxSize = size;
+		this.words = words;
+		for (int i = 0; i < 26; i++)  indexList[i] = new ArrayList<StoreIndex>();
+		wordsParsing();
+	}
+	
 	@SuppressWarnings("unchecked")
-	public static void main(String[] args) {
+	public char[][] getMap() {
 		
-		long startMill = System.currentTimeMillis();
+		char[][] res = new char[maxSize][maxSize];
+		
+		int times = 2000;
+		
+		while (times>0) {
+			initMap();
+			
+			//choose the cross coordinate
+			int pickX = (int)(Math.random()*6 + maxSize/2 - 3);
+			int pickY = (int)(Math.random()*6 + maxSize/2 - 3);
+					
+			randomInit(pickX,pickY);
+			scrabbleMap[pickX][pickY].consider = false;
+			
+			addFour(pickX, pickY);
+			
+			while(waitQueue.size() > 0) {
+				BasicNode tempNode = waitQueue.poll();
+				int alphIdx = (int)(tempNode.content - 'a');
+				
+				ArrayList<StoreIndex> storeIdxArray = (ArrayList<StoreIndex>) indexList[alphIdx];
+				
+				for(int i = 0;i<storeIdxArray.size();i++) {
+					StoreIndex temp = storeIdxArray.get(i);
+					
+					if (picks[temp.wordIndex] == true)	continue;
+					
+					if(tempNode.horizontal == 1)	put(tempNode.x, tempNode.y, temp, 1);
+					else if(tempNode.vertical == 1)	put(tempNode.x, tempNode.y, temp, 0);
+					break;
+				}
+				
+				addFour(tempNode.x, tempNode.y);
+			}
+				
+			float thisMark = assessMap();
+			if (thisMark > totalMark) {
+				totalMark = thisMark;
+				for(int i = 0;i<maxSize;i++)
+					for(int j = 0;j<maxSize;j++)
+						res[i][j] = scrabbleMap[i][j].content;
+			}
+			
+			times--;
+		}
+		System.out.println(totalMark);
+		return res;
+	}
+	
+	private void initMap() {
 		//map initialization
-		for (int i = 0; i < MAX_SIZE; i++) {
-			for(int j = 0; j< MAX_SIZE; j++) {
+		scrabbleMap = new BasicNode[maxSize][maxSize]; 	//map declaration
+		waitQueue.clear();								//clear the queue
+		
+		for (int i = 0; i < maxSize; i++) {
+			for(int j = 0; j< maxSize; j++) {
 				scrabbleMap[i][j] = new BasicNode();
 				scrabbleMap[i][j].x = i;
 				scrabbleMap[i][j].y = j;
@@ -41,58 +93,19 @@ public class MapGenerator {
 			}
 		}
 		
-		for (int i = 0; i < 26; i++)  indexList[i] = new ArrayList<StoreIndex>();
+		picks = new boolean[words.length];
+		for(int i = 0;i<picks.length;i++) picks[i] = false; 
 		
-		//words parsing
-		for (int i = 0; i < words.length; i++ ) {
-			String currentWord = words[i];
-			int wordLength = currentWord.length();
-			for (int j = 0; j < wordLength; j++) {
-				char currentAlph = currentWord.charAt(j);
-				((ArrayList<StoreIndex>) indexList[currentAlph - 'a']).add(new StoreIndex(i, j, wordLength,currentAlph));
-			}
-		}
-				
-	
-		
-		//choose the cross coordinate
-		int pickX = (int)(Math.random()*6 + MAX_SIZE/2 - 3);
-		int pickY = (int)(Math.random()*6 + MAX_SIZE/2 - 3);
-				
-		randomInit(pickX,pickY);
-		scrabbleMap[pickX][pickY].consider = false;
-		
-		addFour(pickX, pickY);
-		
-		while(waitQueue.size() > 0) {
-			BasicNode tempNode = waitQueue.poll();
-			int alphIdx = (int)(tempNode.content - 'a');
-			
-			ArrayList<StoreIndex> storeIdxArray = (ArrayList<StoreIndex>) indexList[alphIdx];
-			
-			for(int i = 0;i<storeIdxArray.size();i++) {
-				StoreIndex temp = storeIdxArray.get(i);
-				
-				if (picks[temp.wordIndex] == true)	continue;
-				
-				if(tempNode.horizontal == 1)	put(tempNode.x, tempNode.y, temp, 1);
-				else if(tempNode.vertical == 1)	put(tempNode.x, tempNode.y, temp, 0);
-				break;
-			}
-			
-			addFour(tempNode.x, tempNode.y);
-		}
-
-		long endMill = System.currentTimeMillis();
-		System.out.printf("time:%d ms\n",endMill-startMill);
-			
-		showMap();
-		
+		leftBound = (float) (maxSize/2.0);
+		rightBound = (float) (maxSize/2.0);
+		upBound = (float) (maxSize/2.0);
+		lowBound = (float) (maxSize/2.0);
+		crossNum = 0;
+		wordsUsed = 0;
 	}
-	
 	//check whether a word can put at a special spot
 	//direction: 0 for horizontal, 1 for vertical
-	static boolean put(int x, int y, StoreIndex index, int direction) {
+	private boolean put(int x, int y, StoreIndex index, int direction) {
 		
 		if (picks[index.wordIndex] == true)	return false;
 		
@@ -109,17 +122,17 @@ public class MapGenerator {
 		int endX = startX + vertiScale * ( index.length - 1 );
 		int endY = startY + horiScale *  ( index.length - 1 );
 		
-		if (startX < 0 || startY < 0 || endX >= MAX_SIZE || endY >= MAX_SIZE) return false;			//out of the bound
+		if (startX < 0 || startY < 0 || endX >= maxSize || endY >= maxSize) return false;			//out of the bound
 		
 		//the input word can not be next to other input words
 		if (direction == 0) {	//horizontally
 			if ( (startY > 0 && scrabbleMap[startX][startY-1].content != '\0') ||
-			     (endY < MAX_SIZE-1 && scrabbleMap[endX][endY+1].content != '\0') )
+			     (endY < maxSize-1 && scrabbleMap[endX][endY+1].content != '\0') )
 					return false;
 		}
 		else if (direction == 1) {	//vertically
 			if ( (startX > 0 && scrabbleMap[startX-1][startY].content != '\0') ||
-				 (endX < MAX_SIZE-1 && scrabbleMap[endX+1][endY].content != '\0') )
+				 (endX < maxSize-1 && scrabbleMap[endX+1][endY].content != '\0') )
 						return false;
 		}
 
@@ -137,12 +150,12 @@ public class MapGenerator {
 			else {	//check whether there are other letters next to the blank
 				if (direction == 0) {
 					if ( (tempX > 0 && scrabbleMap[tempX-1][tempY].content != '\0') || 
-						 (tempX < MAX_SIZE-1 && scrabbleMap[tempX+1][tempY].content != '\0'))
+						 (tempX < maxSize-1 && scrabbleMap[tempX+1][tempY].content != '\0'))
 						return false;
 				}
 				else {
 					if ( (tempY > 0 && scrabbleMap[tempX][tempY-1].content != '\0') || 
-						 (tempY < MAX_SIZE-1 && scrabbleMap[tempX][tempY+1].content != '\0'))
+						 (tempY < maxSize-1 && scrabbleMap[tempX][tempY+1].content != '\0'))
 							return false;
 				}
 			}
@@ -150,30 +163,39 @@ public class MapGenerator {
 		
 		//put the word into the grid
 		picks[index.wordIndex] = true;
+		wordsUsed++;
 		for(int xx = startX,yy = startY,i=0; i<index.length; i++, xx += vertiScale, yy += horiScale) {
-			scrabbleMap[xx][yy].content = thisWordString.charAt(i); 
+			if (scrabbleMap[xx][yy].content != '\0')	crossNum++;
+			else 										scrabbleMap[xx][yy].content = thisWordString.charAt(i);
+			
 			if (horiScale == 1) scrabbleMap[xx][yy].horizontal = horiScale;
 			else if (vertiScale == 1) scrabbleMap[xx][yy].vertical = vertiScale;
 		}
+		
+		//modify the bounds
+		if(startX < upBound)	upBound = startX;
+		if (endX > lowBound)	lowBound = endX;
+		if (startY < leftBound)	leftBound = startY;
+		if (endY > rightBound)	rightBound = endY;
 		
 		return true;
 	}
 
 	//add the four nodes with distance = 1 or 2 to (x,y) to the queue
-	static void addFour(int pickX, int pickY) {
+	private void addFour(int pickX, int pickY) {
 		
 		int left = 0, right = 0, up = 0, down = 0;
 		if (pickX - 2 >=0)	if (checkFourCorners(pickX-2, pickY) && scrabbleMap[pickX-2][pickY].consider == true)	up = 2;
 		if (pickX - 1 >=0)	if (checkFourCorners(pickX-1, pickY) && scrabbleMap[pickX-1][pickY].consider == true)	up = 1;
 		
-		if (pickX + 2 < MAX_SIZE)	if (checkFourCorners(pickX+2, pickY) && scrabbleMap[pickX+2][pickY].consider == true)	down = 2;
-		if (pickX + 1 < MAX_SIZE)	if (checkFourCorners(pickX+1, pickY) && scrabbleMap[pickX+1][pickY].consider == true)	down = 1;
+		if (pickX + 2 < maxSize)	if (checkFourCorners(pickX+2, pickY) && scrabbleMap[pickX+2][pickY].consider == true)	down = 2;
+		if (pickX + 1 < maxSize)	if (checkFourCorners(pickX+1, pickY) && scrabbleMap[pickX+1][pickY].consider == true)	down = 1;
 		
 		if (pickY - 2 >= 0)	if (checkFourCorners(pickX, pickY-2) && scrabbleMap[pickX][pickY-2].consider == true)	left = 2;
 		if (pickY - 1 >= 0)	if (checkFourCorners(pickX, pickY-1) && scrabbleMap[pickX][pickY-1].consider == true)	left = 1;
 		
-		if (pickY + 2 < MAX_SIZE)	if (checkFourCorners(pickX, pickY+2) && scrabbleMap[pickX][pickY+2].consider == true)	right = 2;
-		if (pickY + 1 < MAX_SIZE)	if (checkFourCorners(pickX, pickY+1) && scrabbleMap[pickX][pickY+1].consider == true)	right = 1;
+		if (pickY + 2 < maxSize)	if (checkFourCorners(pickX, pickY+2) && scrabbleMap[pickX][pickY+2].consider == true)	right = 2;
+		if (pickY + 1 < maxSize)	if (checkFourCorners(pickX, pickY+1) && scrabbleMap[pickX][pickY+1].consider == true)	right = 1;
 		
 		if (up != 0 && scrabbleMap[pickX-up][pickY].content != '\0' &&
 			scrabbleMap[pickX-up][pickY].horizontal * scrabbleMap[pickX-up][pickY].vertical == 0)	{
@@ -203,21 +225,21 @@ public class MapGenerator {
 	}
 	
 	//check whether the four corners of a node have other letters
-	static boolean checkFourCorners(int x, int y) {
+	private boolean checkFourCorners(int x, int y) {
 		if (x > 0 && y > 0)
 			if (scrabbleMap[x-1][y-1].content != '\0')	return false;
-		if (x > 0 && y < MAX_SIZE - 1)
+		if (x > 0 && y < maxSize - 1)
 			if (scrabbleMap[x-1][y+1].content != '\0')	return false;
-		if (x < MAX_SIZE -1 && y > 0)
+		if (x < maxSize -1 && y > 0)
 			if (scrabbleMap[x+1][y-1].content != '\0')	return false;
-		if (x < MAX_SIZE -1 && y < MAX_SIZE - 1)
+		if (x < maxSize -1 && y < maxSize - 1)
 			if (scrabbleMap[x+1][y+1].content != '\0')	return false;
 		return true;
 	}
 
-	//pick a letter with more than 1 elements
+	//pick a letter with more than 1 element
 	@SuppressWarnings("unchecked")
-	static boolean randomInit(int x, int y) {
+	private boolean randomInit(int x, int y) {
 		int[] boolArray = new int[26];
 		int putNum = 0, res = -1;
 		int first = -1,second = -1;
@@ -281,30 +303,24 @@ public class MapGenerator {
 		return true;
 	}
 	
-	static void showDatabase() {
-		//show the processed database
-		for (int i = 0;i<26;i++) {
-			System.out.printf("%c: ",(i+'a'));
-			ArrayList<StoreIndex> currentArrayList = (ArrayList<StoreIndex>) indexList[i];
-			for (int j = 0;j<currentArrayList.size();j++) {
-				StoreIndex tempIndex = currentArrayList.get(j);
-				System.out.printf("[%d,%d,%d]",tempIndex.wordIndex,tempIndex.alphIndex,tempIndex.length);
+	//parsing words
+	@SuppressWarnings("unchecked")
+	private void wordsParsing() {
+		//words parsing
+		for (int i = 0; i < words.length; i++ ) {
+			String currentWord = words[i];
+			int wordLength = currentWord.length();
+			for (int j = 0; j < wordLength; j++) {
+				char currentAlph = currentWord.charAt(j);
+				((ArrayList<StoreIndex>) indexList[currentAlph - 'a']).add(new StoreIndex(i, j, wordLength,currentAlph));
 			}
-			System.out.printf("\n");
-		}	
+		}
 	}
 	
-	static void showMap() {
-		for(int i = 0;i<MAX_SIZE; i++) {
-			System.out.printf("\t%d",i);
-		}
-		System.out.println();
-		for(int i = 0; i<MAX_SIZE; i++) {
-			System.out.printf("%d", i);
-			for (int j = 0; j < MAX_SIZE; j++) {
-				System.out.printf("\t%c", scrabbleMap[i][j].content);
-			}
-			System.out.println();
-		}
+	private float assessMap() {
+		float mark = 0f;
+		mark = wordsUsed + 3 * (crossNum - wordsUsed + 1) - ((lowBound-upBound+1)/maxSize) * ((rightBound-leftBound+1)/maxSize) + 1;
+		
+		return mark;
 	}
 }
