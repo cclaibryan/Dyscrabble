@@ -1,14 +1,11 @@
 
-public class mainLogic {
+public class MainLogic {
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		
 		int mapSize = 20;
-		String[] words = new String[] {"constitution", "professional", "pineapple", "proselytize", "presume","tyrande","japordize","westland","probability","tricky"};
+		ArticleParsing parser = new ArticleParsing("/Users/Bryan/Desktop/test.txt");
+		String[] words = parser.pickWords();
 		MapGenerator generator = new MapGenerator(words,mapSize);
 		char[][] res = generator.getMap();
 		
