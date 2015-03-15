@@ -47,7 +47,6 @@ public class WordsDB {
 				String lineTxt = null;
 				
 				stat.executeUpdate("create table words(word varchar(40) PRIMARY KEY, freq long);"); //create the table
-				
 				while((lineTxt = bufferedReader.readLine()) != null){
 					String[] para = lineTxt.split("\t| ");
                     String sql = String.format("insert into words values('%s',%d);", para[0],Long.parseLong(para[1]));

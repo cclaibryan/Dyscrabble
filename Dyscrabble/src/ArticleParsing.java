@@ -50,10 +50,10 @@ public class ArticleParsing {
 		 WordsDB myDb = new WordsDB();		//generate the sqlite3 database for words frequency
 		 
 		 for(int i = 0;i<words.length;i++) {
-			 long times = myDb.queryForFreq(words[i]);
-			 if (words[i].length() > 3)
-				 freqMap.put(words[i], new Long(times));
-				 //System.out.printf("word:%s	num:%d\n",words[i],times);
+			 String lowerWord = words[i].toLowerCase();
+			 long times = myDb.queryForFreq(lowerWord);
+			 if (lowerWord.length() > 3)
+				 freqMap.put(lowerWord, new Long(times));
 		 }
 		 return freqMap;
 	 }
@@ -79,7 +79,6 @@ public class ArticleParsing {
 			 if (entry.getValue().longValue() > 0)	picked[currentPicked++] = entry.getKey().toLowerCase();
 			 if (currentPicked >= pickTime) 	break;
 		 }
-		 System.out.println(listData);
 		 for(int i = 0;i<picked.length;i++)	System.out.printf("word:%s\n", picked[i]);
 		 return picked;
 	 }
@@ -93,20 +92,20 @@ public class ArticleParsing {
 		 }
 	 }
 
+	 //filter the article
 	 private String filterStr(String original) {
-		 String firstFilteredString = original.trim();
+		 String firstFilteredString = original.trim().toLowerCase();
 		 
 		 int length = firstFilteredString.length();
 		 char[] charStr = new char[length];
 		 
 		 for(int i = 0;i < length; i++) {
 			char current = firstFilteredString.charAt(i);
-			if ( (current <= 'z' && current >= 'a') || 
-				 (current <= 'Z' && current >= 'A')) {
+			if (current <= 'z' && current >= 'a') {
 					charStr[i] = current; 
 			}
 			else charStr[i] = ' '; 
 		 }
-		 return new String(charStr);
+		 return new String(charStr).trim();
 	 }
 }
