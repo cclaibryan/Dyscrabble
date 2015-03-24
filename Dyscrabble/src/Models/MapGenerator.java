@@ -74,10 +74,7 @@ public class MapGenerator {
 			}
 			
 			times--;
-			
-			
 		}
-		System.out.println(totalMark);
 		return res;
 	}
 	

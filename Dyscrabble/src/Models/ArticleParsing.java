@@ -16,10 +16,15 @@ import java.util.Map;
 public class ArticleParsing {
 	
 	private HashMap<String, Long> freqMap;
+	private String artileString;
+	private String titleString;
 	
 	public ArticleParsing(String address) {
 		freqMap = new HashMap<String, Long>();
 		File tempFile = new File(address);
+		artileString = new String();
+		titleString = new String();
+		
 		if (tempFile.isFile() && tempFile.exists())	 {
 			InputStreamReader reader;
 			try {
@@ -28,8 +33,17 @@ public class ArticleParsing {
 				BufferedReader bufferedReader = new BufferedReader(reader);
 				
 				String lineTxt = null;
+				boolean titleRead = false;	
 				
 				while((lineTxt = bufferedReader.readLine()) != null){
+					if (titleRead == false)	{
+						titleString += lineTxt;
+						titleRead = true;
+					}
+					else {
+						artileString += lineTxt;
+						artileString += "\n\n";
+					}
 					parse(lineTxt);
 	            }
 			} catch (FileNotFoundException e) {
@@ -53,7 +67,7 @@ public class ArticleParsing {
 		 for(int i = 0;i<words.length;i++) {
 			 String lowerWord = words[i].toLowerCase();
 			 long times = myDb.queryForFreq(lowerWord);
-			 if (lowerWord.length() > 3)
+			 if (lowerWord.length() > 4)
 				 freqMap.put(lowerWord, new Long(times));
 		 }
 		 return freqMap;
@@ -109,4 +123,12 @@ public class ArticleParsing {
 		 }
 		 return new String(charStr).trim();
 	 }
+
+	public String getArtileString() {
+		return artileString;
+	}
+
+	public String getTitleString() {
+		return titleString;
+	}
 }
