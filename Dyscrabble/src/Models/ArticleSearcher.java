@@ -1,6 +1,9 @@
 package Models;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,7 +12,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import org.python.util.PythonInterpreter;
 
 public class ArticleSearcher {
 	
@@ -38,8 +40,28 @@ public class ArticleSearcher {
 	
 	//invoke the crawler
 	public void callCrawler() {
-		PythonInterpreter interpreter = new PythonInterpreter();
-		interpreter.execfile("articles/Crawler.py");
+//		jython api can not recognize python encode('gb18030'), so do not use this
+//		PythonInterpreter interpreter = new PythonInterpreter();
+//		interpreter.execfile("articles/Crawler.py");
+//		PyFunction func = (PyFunction)interpreter.get("searchBreakingNews", PyFunction.class);
+//		func.__call__(new PyInteger(40));
+		try {
+			int getArtNum = 20;
+			Process process = Runtime.getRuntime().exec(String.format("./articles/Crawler.py %d", getArtNum));
+			
+			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));  
+			String line = null;
+			while((line = br.readLine()) != null ) {
+				System.out.println(line);
+				System.out.flush();
+			}
+			
+			br.close(); 
+			//process.waitFor();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 		readFileNames();
 	}
 	
@@ -57,7 +79,7 @@ public class ArticleSearcher {
 		return null;
 	}
 	
-	private void readFileNames() {
+	public void readFileNames() {
 		//update the mapList and dataSet
 		mapList.clear();
 		dateSet.clear();

@@ -26,11 +26,13 @@ public class ModelController {
 			 return instance;  
 		}  
 		
+		public void crawl() {
+			searcher.callCrawler();
+		}
+		
 		//size: the length of a side of the map
-		//updateArts: whether to invoke the Crawler.py to update the articles
-		public void loadElements(int size, boolean updateArts) {
+		public void loadElements(int size) {
 			this.mapSize = size;
-			if (updateArts)	searcher.callCrawler();
 			
 			ArticleParsing parser = new ArticleParsing("articles/" + searcher.pickArticle());
 			articleString = parser.getArtileString();

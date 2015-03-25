@@ -28,7 +28,7 @@ public class ArticleParsing {
 		if (tempFile.isFile() && tempFile.exists())	 {
 			InputStreamReader reader;
 			try {
-				reader = new InputStreamReader(new FileInputStream(tempFile));
+				reader = new InputStreamReader(new FileInputStream(tempFile),"gb18030");	//need to read as GB18030
 				@SuppressWarnings("resource")
 				BufferedReader bufferedReader = new BufferedReader(reader);
 				

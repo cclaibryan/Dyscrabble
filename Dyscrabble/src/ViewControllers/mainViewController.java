@@ -23,8 +23,12 @@ import javax.swing.JTextField;
 import Models.ModelController;
 
 
-public class mainViewController extends JFrame {
+public class MainViewController extends JFrame {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 	private JTextField[][] textFieldTable;
 	final int mapSize = 18;		//map size
@@ -35,7 +39,7 @@ public class mainViewController extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					mainViewController frame = new mainViewController();
+					MainViewController frame = new MainViewController();
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -60,7 +64,7 @@ public class mainViewController extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public mainViewController() {
+	public MainViewController() {
 		setTitle("Dyscrabble");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 1150, 780);
@@ -83,9 +87,9 @@ public class mainViewController extends JFrame {
 		textFieldTable = new JTextField[mapSize][mapSize];
 		
 		ModelController controller = ModelController.getInstance();
-		if (controller.netDetect())	System.out.println("good!");
-		else						System.out.println("bad!");
-controller.loadElements(mapSize,true);		//whether to use crawler or not
+//		if (controller.netDetect())	System.out.println("good!");
+//		else						System.out.println("bad!");
+controller.loadElements(mapSize);		//whether to use crawler or not
 		char[][] map = controller.getMap();
 		String article = controller.getArticleString();
 		String title = controller.getTitleString();
