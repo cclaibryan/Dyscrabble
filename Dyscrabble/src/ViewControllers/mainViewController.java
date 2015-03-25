@@ -1,13 +1,8 @@
 package ViewControllers;
 
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
-import java.awt.LayoutManager;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -15,22 +10,15 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
-
-import javax.swing.JScrollBar;
-import javax.swing.JTextArea;
 import javax.swing.BorderFactory;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.ScrollPaneLayout;
-
 import java.awt.GridLayout;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-
 import javax.swing.JTextField;
-
-import apple.laf.JRSUIUtils.ScrollBar;
 
 import Models.ModelController;
 
@@ -95,13 +83,15 @@ public class mainViewController extends JFrame {
 		textFieldTable = new JTextField[mapSize][mapSize];
 		
 		ModelController controller = ModelController.getInstance();
-		controller.loadElements(mapSize);
+		if (controller.netDetect())	System.out.println("good!");
+		else						System.out.println("bad!");
+controller.loadElements(mapSize,true);		//whether to use crawler or not
 		char[][] map = controller.getMap();
 		String article = controller.getArticleString();
 		String title = controller.getTitleString();
 		
 		JTextPane txtrTest = new JTextPane();
-		setDocs(txtrTest, title, Color.black, true, 18);
+		setDocs(txtrTest, title+"\n\n", Color.black, true, 18);
 		setDocs(txtrTest, article, Color.black, false, 14);
 		txtrTest.setEditable(false);
 		txtrTest.setCaretPosition(0);				//set the scroll bar on the top

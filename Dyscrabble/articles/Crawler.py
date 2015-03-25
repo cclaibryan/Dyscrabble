@@ -5,6 +5,11 @@ import urllib2
 import re
 import Queue
 import time
+import os,sys
+import inspect
+
+#get script path (sys.path and __file__ can not work on jpython)
+FILE_PATH = '%s/' % os.path.abspath(os.path.dirname(inspect.stack()[0][1])) 	
 
 #breaking news class
 class NewsId :
@@ -21,13 +26,8 @@ class NewsId :
 		return hash(self.type + " " + self.id)
 
 # search for breaking news
-def searchBreakingNews(baseURL,currentTime) :
-	response = myURLOpen(baseURL)
-	mainPageContent = response.read()
-# datePattern = re.findall(r'<!--@today@ \d+  -->', mainPageContent, re.M)
-# date = datePattern[0].split(' ')[1]		#get the date like 20150320
-# print date
-# print mainPageContent
+def searchBreakingNews(baseURL, mainPageContent, currentTime, date, fileList) :
+	fileList.sort(lambda x, y : cmp(x['date'], y['date']))	#sort before use
 	queue = Queue.Queue()
 	seen = set()
 
@@ -37,7 +37,6 @@ def searchBreakingNews(baseURL,currentTime) :
 		queue.put(i)
 		seen.add(i)
 
-	times = 10
 	while queue.empty()==False:
 		currentUrlId = queue.get()
 		currentUrl = '%s%s?id=%s' % (baseURL, currentUrlId.type, currentUrlId.id)
@@ -53,9 +52,23 @@ def searchBreakingNews(baseURL,currentTime) :
 
 		pattern = re.compile(r'<span class="bodyHeadline">(.+?)</span>.*?<br/>.*?<span class="bodyCopy">.+?<i>(.+?)</i>(.+?)</span>',re.DOTALL)
 		contents = pattern.findall(content)
-	
-		fileName = currentUrlId.id + "--" + currentUrlId.type + ".txt"
-	
+		
+
+		fileName = FILE_PATH + date + "--" +  currentUrlId.id + "--" + currentUrlId.type + ".txt"
+		
+		fileInfoDict = {}
+		fileInfoDict['id'] = currentUrlId.id
+		fileInfoDict['date'] = date
+		fileInfoDict['type'] = currentUrlId.type
+
+		#over 300 articles, need to delete some 
+		while len(fileList) > 300:
+			delFileName = FILE_PATH + fileList[0]['date'] + "--" +  fileList[0]['id'] + "--" + fileList[0]['type'] + ".txt"
+			del fileList[0]
+
+			if (os.path.exists(delFileName)):
+				os.remove(delFileName)
+
 		f = open(fileName,'w')
 		f.write(mulReplace(contents[0][0]))
 		f.write('\n')
@@ -64,8 +77,7 @@ def searchBreakingNews(baseURL,currentTime) :
 		f.write(mulReplace(contents[0][2]))
 		f.close()
 
-		if times > 0: times-=1
-		else:		break	
+		fileList.append(fileInfoDict)	#add current file info to the list
 
 #url request with try and except
 def myURLOpen(url) :
@@ -102,6 +114,31 @@ def getContentURL(content):
 		reList.append(newId)
 	return reList
 
+#script begin
 baseURL = 'http://www.thestandard.com.hk/'						#main website url of the Standard
 currentTime =  time.strftime('%H:%M:%S %Y-%m-%d',time.localtime(time.time()))	#get current time
-searchBreakingNews(baseURL,currentTime)
+
+#request for the main page 
+response = myURLOpen(baseURL)
+mainPageContent = response.read()
+datePattern = re.findall(r'<!--@today@ \d+  -->', mainPageContent, re.M)
+date = datePattern[0].split(' ')[1]		#get the date like 20150320
+
+listA = os.listdir(FILE_PATH)
+fileList = []					#file list
+for ele in listA:
+	attr = ele.split('--')
+	if len(attr)==3 :
+		myDict = {}
+		myDict['date']=attr[0]
+		myDict['id']=attr[1]
+		myDict['type']=attr[2].replace('.txt', '')	#need to delete the .txt postfix
+		fileList.append(myDict)
+searchBreakingNews(baseURL, mainPageContent, currentTime, date, fileList)
+
+
+
+
+
+
+
