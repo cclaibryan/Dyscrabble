@@ -4,6 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Set;
+
+import org.python.antlr.PythonParser.return_stmt_return;
+
+import Models.MapGenerator.AnsIndex;
 
 public class ModelController {
 		
@@ -12,6 +18,9 @@ public class ModelController {
 		private int mapSize = 15;
 		private String articleString;
 		private String titleString;
+		
+		private MapGenerator generator;		//map generator
+		private ArticleParsing parser;		//article parser
 		
 		private ArticleSearcher searcher;
 		
@@ -24,7 +33,11 @@ public class ModelController {
 				 instance = new ModelController();  
 			 }  
 			 return instance;  
-		}  
+		}
+		
+		public ArticleSearcher getSearcher() {
+			return searcher;
+		}
 		
 		public void crawl() {
 			searcher.callCrawler();
@@ -34,14 +47,46 @@ public class ModelController {
 		public void loadElements(int size) {
 			this.mapSize = size;
 			
-			ArticleParsing parser = new ArticleParsing("articles/" + searcher.pickArticle());
+			//words parsing
+			parser = new ArticleParsing("articles/" + searcher.pickArticle());
 			articleString = parser.getArtileString();
 			titleString = parser.getTitleString();
 			String[] words = parser.pickWords();
-			MapGenerator generator = new MapGenerator(words,this.mapSize);
+			
+			//map generation
+			generator = new MapGenerator(words,this.mapSize);
 			map = generator.getMap();
 		}
 		
+		//check whether the input answer is correct
+		public boolean checkAns(char[][] myAns) {
+			Set<String> allWordsList = parser.getFreqMap().keySet();	//all the word list
+			String[] pickedWords = generator.getWords();
+			ArrayList<AnsIndex> ansInfo = generator.getAns();			//
+			
+			for(AnsIndex idx : ansInfo) {
+				int wordLength = pickedWords[idx.getWordIdx()].length();
+				int delX=0,delY=0;
+				if (idx.getDirection() == 0)	delY = 1;	//horizontally
+				else							delX = 1;	//vertically
+				
+				char[] currentInputWord = new char[100];
+				int index = 0;
+				int x = idx.getStartX();
+				int y = idx.getStartY();
+				
+				while (index < wordLength) {
+					currentInputWord[index++] = myAns[x][y];
+					x += delX;
+					y += delY;
+				}
+				String outputStr = new String(currentInputWord);
+				outputStr = outputStr.trim();						//delete the '\0's
+				if (allWordsList.contains(outputStr)==false)	return false;
+			}
+			return true;
+		}
+	
 		//detect whether the network is available
 		public boolean netDetect() {
 				Runtime runtime = Runtime.getRuntime();  
@@ -87,12 +132,4 @@ public class ModelController {
 		public String getTitleString() {
 			return titleString;
 		}
-		
-		public static void main(String[] args) {
-			ModelController con = ModelController.getInstance();
-			if (con.netDetect()) System.out.println("good!");
-			else				System.out.println("bad!");
-			
-		}
-		
 }

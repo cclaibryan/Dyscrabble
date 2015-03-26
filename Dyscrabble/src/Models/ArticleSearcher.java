@@ -3,6 +3,7 @@ package Models;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,13 +12,15 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Observable;
 import java.util.Set;
 
-public class ArticleSearcher {
+public class ArticleSearcher extends Observable{
 	
 	private ArrayList<String[]> mapList;		//list of file map (fileName, date)
 	private Set<String> dateSet;				//set storing the emerging date 
 	private static ArticleSearcher instance;
+	private String currentDownloadContent;
 	
 	private ArticleSearcher() {
 		mapList = new ArrayList<String[]>();
@@ -40,24 +43,31 @@ public class ArticleSearcher {
 	
 	//invoke the crawler
 	public void callCrawler() {
-//		jython api can not recognize python encode('gb18030'), so do not use this
+//		jython api can not recognize python encode('iso-8859-1'), so do not use this
 //		PythonInterpreter interpreter = new PythonInterpreter();
 //		interpreter.execfile("articles/Crawler.py");
 //		PyFunction func = (PyFunction)interpreter.get("searchBreakingNews", PyFunction.class);
 //		func.__call__(new PyInteger(40));
+		
 		try {
-			int getArtNum = 20;
+			int getArtNum = 5;
+
 			Process process = Runtime.getRuntime().exec(String.format("./articles/Crawler.py %d", getArtNum));
 			
-			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));  
-			String line = null;
-			while((line = br.readLine()) != null ) {
-				System.out.println(line);
-				System.out.flush();
+			InputStream is = process.getInputStream();  
+			InputStreamReader isr = new InputStreamReader(is);  
+			BufferedReader br = new BufferedReader(isr);  
+
+			while((currentDownloadContent = br.readLine()) != null ) {
+				setChanged();
+				notifyObservers(currentDownloadContent);
+				//System.out.println(currentDownloadContent);
+				//System.out.flush();
 			}
-			
+			isr.close();  
 			br.close(); 
-			//process.waitFor();
+			is.close();  
+		
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

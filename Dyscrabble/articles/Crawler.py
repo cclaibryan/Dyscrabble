@@ -10,7 +10,8 @@ import inspect
 import HTMLParser
 
 #get script path (sys.path and __file__ can not work on jpython)
-FILE_PATH = '%s/' % os.path.abspath(os.path.dirname(inspect.stack()[0][1])) 	
+FILE_PATH = '%s/' % os.path.abspath(os.path.dirname(inspect.stack()[0][1]))
+MAX_ARTICLE_NUM = 300 		#at most store 300 news
 
 #breaking news class
 class NewsId :
@@ -65,7 +66,8 @@ def searchBreakingNews(runTimes) :
 	while queue.empty()==False:
 		currentUrlId = queue.get()
 		currentUrl = '%s%s?id=%s' % (baseURL, currentUrlId.type, currentUrlId.id)
-		print "current URL:" + currentUrl
+		print "Downloading:  " + currentUrl +' ...'
+		sys.stdout.flush()		#important!!!!! To make sure that java can read immediately
 
 		content = myURLOpen(currentUrl).read()
 		reList = getContentURL(content)
@@ -86,8 +88,8 @@ def searchBreakingNews(runTimes) :
 		fileInfoDict['date'] = date
 		fileInfoDict['type'] = currentUrlId.type
 
-		#over 300 articles, need to delete some 
-		while len(fileList) > 300:
+		#over MAX_ARTICLE_NUM articles, need to delete some 
+		while len(fileList) > MAX_ARTICLE_NUM:
 			delFileName = FILE_PATH + fileList[0]['date'] + "--" +  fileList[0]['id'] + "--" + fileList[0]['type'] + ".txt"
 			del fileList[0]
 
@@ -97,15 +99,15 @@ def searchBreakingNews(runTimes) :
 		htmlParser = HTMLParser.HTMLParser()
 		f = open(fileName,'w')
 		title = mulReplace(contents[0][0])
-		title = htmlParser.unescape(title).encode('gb18030')
+		title = htmlParser.unescape(title).encode('iso-8859-1')
 		f.write(title)
 		f.write('\n')
 		myDateString = mulReplace(contents[0][1])
-		myDateString = htmlParser.unescape(myDateString).encode('gb18030')
+		myDateString = htmlParser.unescape(myDateString).encode('iso-8859-1')
 		f.write(myDateString + "  DL at " + currentTime)
 		f.write('\n')
 		mainCon = mulReplace(contents[0][2])
-		mainCon = htmlParser.unescape(mainCon).encode('gb18030')
+		mainCon = htmlParser.unescape(mainCon).encode('iso-8859-1')
 		f.write(mainCon)
 		f.close()
 

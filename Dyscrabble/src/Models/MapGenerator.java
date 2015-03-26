@@ -27,6 +27,14 @@ public class MapGenerator {
 		wordsParsing();
 	}
 	
+	public String[] getWords() {
+		return this.words;
+	}
+	
+	public ArrayList<AnsIndex> getAns() {
+		return this.ans;
+	}
+	
 	@SuppressWarnings("unchecked")
 	public char[][] getMap() {
 		

@@ -2,27 +2,38 @@ package ViewControllers;
 
 import java.awt.Color;
 import java.awt.EventQueue;
-
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextPane;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import javax.swing.JButton;
-
 import Models.ModelController;
+import Utilities.Difficulty;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import javax.swing.JTextField;
+import java.util.Observable;
+import java.util.Observer;
 
-public class StartViewController extends JFrame {
+public class StartViewController extends JFrame implements Observer, ActionListener {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-	private JTextField textField;
+	private JTextPane textPane;
+	
 	private JButton btnStart;
+	private JButton btnEasy;
+	private JButton btnMedium;
+	private JButton btnHard;
+	private JButton btnBack;
+	
 	private ModelController controller;
 	/**
 	 * Launch the application.
@@ -31,7 +42,7 @@ public class StartViewController extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					StartViewController frame = new StartViewController();
+					StartViewController frame = new StartViewController(true);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -40,8 +51,8 @@ public class StartViewController extends JFrame {
 		});
 	}
 	
-	public JTextField getTextField() {
-		 return textField;
+	public JTextPane getTextPane() {
+		 return textPane;
 	}
 	public JButton getBtnStart() {
 		return btnStart;
@@ -55,7 +66,7 @@ public class StartViewController extends JFrame {
 	private void loadComponents() {
 		setTitle("Dyscrabble");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 450, 300);
+		setBounds(100, 100, 466, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -63,29 +74,32 @@ public class StartViewController extends JFrame {
 		
 		//button definitions
 		btnStart = new JButton("Start");
-		btnStart.setBounds(163, 118, 117, 29);
+		btnStart.setBounds(174, 107, 117, 29);
 		contentPane.add(btnStart);
 		
-		final JButton btnEasy = new JButton("Easy");
-		btnEasy.setBounds(24, 173, 117, 29);
+		btnEasy = new JButton("Easy");
+		btnEasy.addActionListener(this);
+		btnEasy.setBounds(30, 162, 117, 29);
 		contentPane.add(btnEasy);
 		
-		final JButton btnMedium = new JButton("Medium");
-		btnMedium.setBounds(163, 173, 117, 29);
+		btnMedium = new JButton("Medium");
+		btnMedium.addActionListener(this);
+		btnMedium.setBounds(174, 162, 117, 29);
 		contentPane.add(btnMedium);
 		
-		final JButton btnDifficult = new JButton("Difficult");
-		btnDifficult.setBounds(301, 173, 117, 29);
-		contentPane.add(btnDifficult);
+		btnHard = new JButton("Difficult");
+		btnHard.addActionListener(this);
+		btnHard.setBounds(321, 162, 117, 29);
+		contentPane.add(btnHard);
 		
-		final JButton btnBack = new JButton("Back");
-		btnBack.setBounds(163, 226, 117, 29);
+		btnBack = new JButton("Back");
+		btnBack.setBounds(174, 203, 117, 29);
 		contentPane.add(btnBack);
 		
 		//difficulty buttons are not visible at first
 		btnEasy.setVisible(false);
 		btnMedium.setVisible(false);
-		btnDifficult.setVisible(false);
+		btnHard.setVisible(false);
 		btnBack.setVisible(false);
 		
 		btnStart.addActionListener(new ActionListener() {
@@ -93,7 +107,7 @@ public class StartViewController extends JFrame {
 				btnStart.setVisible(false);
 				btnEasy.setVisible(true);
 				btnMedium.setVisible(true);
-				btnDifficult.setVisible(true);
+				btnHard.setVisible(true);
 				btnBack.setVisible(true);
 			}
 		});
@@ -106,7 +120,7 @@ public class StartViewController extends JFrame {
 				btnStart.setVisible(true);
 				btnEasy.setVisible(false);
 				btnMedium.setVisible(false);
-				btnDifficult.setVisible(false);
+				btnHard.setVisible(false);
 				btnBack.setVisible(false);
 			}
 		});
@@ -114,25 +128,33 @@ public class StartViewController extends JFrame {
 		btnStart.setEnabled(false);		//start button is not available before the network download is finished
 		
 		//tip field below
-		textField = new JTextField();
-		textField.setBorder(new EmptyBorder(0,0,0,0));
-		textField.setBounds(0, 263, 450, 15);
-		textField.setBackground(new Color(237, 209, 166));
-		textField.setText("testing");
-		textField.setHorizontalAlignment(JTextField.CENTER);
-		textField.setEditable(false);
-		contentPane.add(textField);
-		textField.setColumns(10);
+		textPane = new JTextPane();
+		
+		//set textPane to align center
+		StyledDocument doc = textPane.getStyledDocument();
+		SimpleAttributeSet center = new SimpleAttributeSet();
+		StyleConstants.setAlignment(center, StyleConstants.ALIGN_CENTER);
+		doc.setParagraphAttributes(0, doc.getLength(), center, false);
+		
+		textPane.setBorder(new EmptyBorder(0,0,0,0));
+		textPane.setText("Enjoy yourself with Dyscrabble!");
+		textPane.setBounds(0, 242, 466, 36);
+		textPane.setBackground(new Color(237, 209, 166));
+		textPane.setEditable(false);
+		
+		contentPane.add(textPane);
 	}
 	
 	
-	public StartViewController() {
+	public StartViewController(boolean needCrawl) {
 		loadComponents();
 		controller = ModelController.getInstance();		//initiate the model controller
-		
+		controller.getSearcher().addObserver(this);
 		//new thread for initial and crawling the articles
-		LoadingThread thread = new LoadingThread(this);	
-		thread.start();
+		if (needCrawl) {
+			LoadingThread thread = new LoadingThread(this);	
+			thread.start();
+		}
 	}
 	
 	class LoadingThread extends Thread {
@@ -143,23 +165,54 @@ public class StartViewController extends JFrame {
 		@Override
 		public void run() {
 			ModelController controller = frame.getController();
-			frame.getTextField().setText("Network detecting!");
+			frame.getTextPane().setText("Network detecting......");
 			if (controller.netDetect()) {
-				frame.getTextField().setText("Network is available!");
+				frame.getTextPane().setText("Network is available.");
 				try {
-					sleep(1500);
+					sleep(1000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				frame.getTextField().setText("Data initiating...");
+				frame.getTextPane().setText("Data initiating...");
 				frame.getController().crawl();
-				frame.getTextField().setText("Data preparation Finished!");
+				frame.getTextPane().setText("Data preparation Finished!");
 			}
 			else 
-				frame.getTextField().setText("Network is not available!");
+				frame.getTextPane().setText("Network is not available!");
 			
 			frame.getBtnStart().setEnabled(true);
 		}
+	}
+
+	@Override
+	public void update(Observable o, Object arg) {
+		// TODO Auto-generated method stub
+		if (arg instanceof String) 
+			textPane.setText((String) arg);	
+	}
+	
+	public void actionPerformed(ActionEvent e) {
+		
+		int res = JOptionPane.showConfirmDialog(null, "Take a deep breath...Are you ready for the game?\n(Timing will start when push \"Yes\")", "Dyscrabble", JOptionPane.YES_NO_OPTION); 
+        if (res == JOptionPane.NO_OPTION) { 
+        	return;
+        } 
+        
+        if(e.getSource()==btnEasy){
+        	this.setVisible(false);
+        	MainViewController temp = new MainViewController(Difficulty.Easy);
+        	temp.setVisible(true);
+        }
+        else if(e.getSource()==btnMedium){
+        	this.setVisible(false);
+        	MainViewController temp = new MainViewController(Difficulty.Medium);
+        	temp.setVisible(true);
+        }
+        else if (e.getSource()==btnHard){
+        	this.setVisible(false);
+        	MainViewController temp = new MainViewController(Difficulty.Hard);
+        	temp.setVisible(true);
+        }
 	}
 }

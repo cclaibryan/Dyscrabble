@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.python.antlr.PythonParser.return_stmt_return;
+
 
 public class ArticleParsing {
 	
@@ -28,7 +30,7 @@ public class ArticleParsing {
 		if (tempFile.isFile() && tempFile.exists())	 {
 			InputStreamReader reader;
 			try {
-				reader = new InputStreamReader(new FileInputStream(tempFile),"gb18030");	//need to read as GB18030
+				reader = new InputStreamReader(new FileInputStream(tempFile),"iso-8859-1");	//need to read as GB18030
 				@SuppressWarnings("resource")
 				BufferedReader bufferedReader = new BufferedReader(reader);
 				
@@ -54,7 +56,6 @@ public class ArticleParsing {
 				e.printStackTrace();
 			}
 		}
-		
 	}
 	
 	//return all the words in the article
@@ -107,7 +108,7 @@ public class ArticleParsing {
 		 }
 	 }
 
-	 //filter the article
+	 //filter the article, delete the non-alphabets
 	 private String filterStr(String original) {
 		 String firstFilteredString = original.trim().toLowerCase();
 		 
@@ -130,5 +131,9 @@ public class ArticleParsing {
 
 	public String getTitleString() {
 		return titleString;
+	}
+	public HashMap<String, Long> getFreqMap()
+	{
+		return this.freqMap;
 	}
 }

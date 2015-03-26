@@ -1,7 +1,6 @@
 package ViewControllers;
 
 import java.awt.Color;
-import java.awt.EventQueue;
 import java.awt.Font;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -20,7 +19,10 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import javax.swing.JTextField;
 
+import org.python.modules.thread.thread;
+
 import Models.ModelController;
+import Utilities.Difficulty;
 
 
 public class MainViewController extends JFrame {
@@ -29,24 +31,12 @@ public class MainViewController extends JFrame {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private JPanel contentPane;
-	private JTextField[][] textFieldTable;
-	final int mapSize = 18;		//map size
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					MainViewController frame = new MainViewController();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
+	private JPanel contentPane;					//the article frame
+	private JScrollPane scrollPane;				//the scroll pane
+	private JTextField[][] mapTable;			//the map
+	private Difficulty difficulty;				//current difficulty
+	private ModelController controller;			//the model controller
+	final int mapSize = 18;						//map size
 	
 	void setDocs(JTextPane textPane, String str, Color col, boolean isBold, int fontSize) {
 		SimpleAttributeSet attset = new SimpleAttributeSet();
@@ -61,35 +51,12 @@ public class MainViewController extends JFrame {
 			e.printStackTrace();
 		}   
 	}
-	/**
-	 * Create the frame.
-	 */
-	public MainViewController() {
-		setTitle("Dyscrabble");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 1150, 780);
-		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		setContentPane(contentPane);
-		contentPane.setLayout(null);
+	
+	public void reload() {
+		scrollPane.setViewportView(null);
 		
-		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setLayout(new ScrollPaneLayout());
-		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		scrollPane.setBounds(27, 20, 359, 628);
-		contentPane.add(scrollPane);
-
-		JPanel panel = new JPanel();
-		panel.setBounds(403, 20, 40*mapSize, 40*mapSize);
-		contentPane.add(panel);
-		panel.setLayout(new GridLayout(mapSize, mapSize, 0, 0));
-		
-		textFieldTable = new JTextField[mapSize][mapSize];
-		
-		ModelController controller = ModelController.getInstance();
-//		if (controller.netDetect())	System.out.println("good!");
-//		else						System.out.println("bad!");
-controller.loadElements(mapSize);		//whether to use crawler or not
+		//reload data
+		controller.loadElements(mapSize);	
 		char[][] map = controller.getMap();
 		String article = controller.getArticleString();
 		String title = controller.getTitleString();
@@ -103,22 +70,67 @@ controller.loadElements(mapSize);		//whether to use crawler or not
 		
 		for(int i = 0;i<mapSize;i++)
 			for (int j = 0;j<mapSize;j++) {
-				
-				textFieldTable[i][j] = new JTextField();
-				
-				final JTextField tempField = textFieldTable[i][j];
+				JTextField tempField = mapTable[i][j];
+				if (map[i][j]!= '\0') {
+					double ran = Math.random();
+					double threshold = 0;
+					switch (difficulty) {
+						case Easy:		threshold = 0.4; break;
+						case Medium:	threshold = 0.25; break;
+						case Hard:		threshold = 0.1; break;
+					}
+					if (ran > threshold) {
+//						tempField.setText(String.format("%c", map[i][j]));
+						tempField.setEditable(true);
+						tempField.setBackground(Color.white);
+						tempField.setForeground(Color.black);
+					}
+					else {
+						tempField.setText(String.format("%c", map[i][j]));
+						tempField.setEditable(false);
+						tempField.setBackground(Color.white);
+						tempField.setForeground(Color.red);
+					}	
+				}
+				else {
+					tempField.setText("");
+					tempField.setEditable(false);
+					tempField.setBackground(Color.gray);
+					tempField.setForeground(Color.black);
+				}
+			}
+	}
+	
+	public MainViewController(Difficulty difficulty) {
+		//initiate the frame
+		setTitle("Dyscrabble");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 1150, 780);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		contentPane.setLayout(null);
+		
+		//initiate the scroll pane
+		scrollPane = new JScrollPane();
+		scrollPane.setLayout(new ScrollPaneLayout());
+		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		scrollPane.setBounds(27, 20, 359, 584);
+		contentPane.add(scrollPane);
+
+		//initiate the map panel
+		JPanel panel = new JPanel();
+		panel.setBounds(403, 20, 40*mapSize, 40*mapSize);
+		contentPane.add(panel);
+		panel.setLayout(new GridLayout(mapSize, mapSize, 0, 0));
+		mapTable = new JTextField[mapSize][mapSize];
+		for(int i = 0;i<mapSize;i++)
+			for (int j = 0;j<mapSize;j++) {
+				mapTable[i][j] = new JTextField();
+				final JTextField tempField = mapTable[i][j];
 				tempField.setHorizontalAlignment(JTextField.CENTER);
 				tempField.setFont(new Font("Letter", Font.BOLD, 25));
 				tempField.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-				
-				if (map[i][j]!= '\0') {
-					tempField.setText(String.format("%c", map[i][j]));
-				}
-				else {
-					tempField.setEditable(false);
-					tempField.setBackground(Color.gray);
-				}
-					
 				final int tempI = i;
 				final int tempJ = j;
 				tempField.addKeyListener(new KeyListener() { 
@@ -141,7 +153,7 @@ controller.loadElements(mapSize);		//whether to use crawler or not
 						switch (keyCode) {
 						case 37:	//left
 							if (tempJ == 0) {
-								textFieldTable[tempI][tempJ].requestFocus();
+								mapTable[tempI][tempJ].requestFocus();
 								break;
 							}
 							else {
@@ -149,15 +161,15 @@ controller.loadElements(mapSize);		//whether to use crawler or not
 								boolean find = false;
 								
 								while (tempLeft >= 0) {
-									if (textFieldTable[tempI][tempLeft].isEditable() == false) 
+									if (mapTable[tempI][tempLeft].getBackground() == Color.gray) 
 										tempLeft--;
 									else {
 										find = true;
 										break;
 									}
 								}
-								if (find) 	textFieldTable[tempI][tempLeft].requestFocus();
-								else		textFieldTable[tempI][tempJ].requestFocus();
+								if (find) 	mapTable[tempI][tempLeft].requestFocus();
+								else		mapTable[tempI][tempJ].requestFocus();
 							}
 							break;
 							
@@ -165,7 +177,7 @@ controller.loadElements(mapSize);		//whether to use crawler or not
 						case 38:	//up
 							
 							if (tempI == 0) {
-								textFieldTable[tempI][tempJ].requestFocus();
+								mapTable[tempI][tempJ].requestFocus();
 								break;
 							}
 							else {
@@ -173,22 +185,22 @@ controller.loadElements(mapSize);		//whether to use crawler or not
 								boolean find = false;
 								
 								while (tempUp >= 0) {
-									if (textFieldTable[tempUp][tempJ].isEditable() == false) 
+									if (mapTable[tempUp][tempJ].getBackground() == Color.gray) 
 										tempUp--;
 									else {
 										find = true;
 										break;
 									}
 								}
-								if (find) 	textFieldTable[tempUp][tempJ].requestFocus();
-								else		textFieldTable[tempI][tempJ].requestFocus();
+								if (find) 	mapTable[tempUp][tempJ].requestFocus();
+								else		mapTable[tempI][tempJ].requestFocus();
 							}
 							break;
 							
 						case 39:	//right
 							
 							if (tempJ == mapSize - 1) {
-								textFieldTable[tempI][tempJ].requestFocus();
+								mapTable[tempI][tempJ].requestFocus();
 								break;
 							}
 							else {
@@ -196,22 +208,22 @@ controller.loadElements(mapSize);		//whether to use crawler or not
 								boolean find = false;
 								
 								while (tempRight < mapSize) {
-									if (textFieldTable[tempI][tempRight].isEditable() == false) 
+									if (mapTable[tempI][tempRight].getBackground() == Color.gray) 
 										tempRight++;
 									else {
 										find = true;
 										break;
 									}
 								}
-								if (find) 	textFieldTable[tempI][tempRight].requestFocus();
-								else		textFieldTable[tempI][tempJ].requestFocus();
+								if (find) 	mapTable[tempI][tempRight].requestFocus();
+								else		mapTable[tempI][tempJ].requestFocus();
 							}
 							break;
 							
 						case 40:
 							
 							if (tempI == mapSize - 1) {
-								textFieldTable[tempI][tempJ].requestFocus();
+								mapTable[tempI][tempJ].requestFocus();
 								break;
 							}
 							else {
@@ -219,15 +231,15 @@ controller.loadElements(mapSize);		//whether to use crawler or not
 								boolean find = false;
 								
 								while (tempDown < mapSize) {
-									if (textFieldTable[tempDown][tempJ].isEditable() == false) 
+									if (mapTable[tempDown][tempJ].getBackground() == Color.gray) 
 										tempDown++;
 									else {
 										find = true;
 										break;
 									}
 								}
-								if (find) 	textFieldTable[tempDown][tempJ].requestFocus();
-								else		textFieldTable[tempI][tempJ].requestFocus();
+								if (find) 	mapTable[tempDown][tempJ].requestFocus();
+								else		mapTable[tempI][tempJ].requestFocus();
 							}
 							break;
 						default:
@@ -238,9 +250,13 @@ controller.loadElements(mapSize);		//whether to use crawler or not
 						
 					} 
 				});
-				
-				panel.add(textFieldTable[i][j]);
+				panel.add(mapTable[i][j]);
 			}
-			
+		
+		this.controller = ModelController.getInstance();
+		this.difficulty = difficulty;
+		this.reload();
+		
 	}
+	
 }
