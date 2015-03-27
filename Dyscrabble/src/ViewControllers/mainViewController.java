@@ -5,11 +5,13 @@ import java.awt.Font;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.BorderFactory;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.ScrollPaneConstants;
@@ -17,12 +19,18 @@ import javax.swing.ScrollPaneLayout;
 import java.awt.GridLayout;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import javax.swing.JTextField;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
-import org.python.modules.thread.thread;
+import javax.swing.JTextField;
 
 import Models.ModelController;
 import Utilities.Difficulty;
+import Utilities.GameStatus;
+
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 
 public class MainViewController extends JFrame {
@@ -36,7 +44,16 @@ public class MainViewController extends JFrame {
 	private JTextField[][] mapTable;			//the map
 	private Difficulty difficulty;				//current difficulty
 	private ModelController controller;			//the model controller
+	
+	private JButton btnFinish;
+	
 	final int mapSize = 18;						//map size
+	private char[][] map;						//current map content
+	
+	private int coX;						//current coordinate x of focused text field
+	private int coY;						//current coordinate y of focused text field
+	
+	private GameStatus gameStatue;
 	
 	void setDocs(JTextPane textPane, String str, Color col, boolean isBold, int fontSize) {
 		SimpleAttributeSet attset = new SimpleAttributeSet();
@@ -54,10 +71,12 @@ public class MainViewController extends JFrame {
 	
 	public void reload() {
 		scrollPane.setViewportView(null);
+		btnFinish.setEnabled(true);
+		gameStatue = GameStatus.INGAME;
 		
 		//reload data
 		controller.loadElements(mapSize);	
-		char[][] map = controller.getMap();
+		map = controller.getMap();
 		String article = controller.getArticleString();
 		String title = controller.getTitleString();
 		
@@ -75,21 +94,21 @@ public class MainViewController extends JFrame {
 					double ran = Math.random();
 					double threshold = 0;
 					switch (difficulty) {
-						case Easy:		threshold = 0.4; break;
+						case Easy:		threshold = 0.40; break;
 						case Medium:	threshold = 0.25; break;
 						case Hard:		threshold = 0.1; break;
 					}
 					if (ran > threshold) {
-//						tempField.setText(String.format("%c", map[i][j]));
 						tempField.setEditable(true);
 						tempField.setBackground(Color.white);
 						tempField.setForeground(Color.black);
+						map[i][j] = ' ';
 					}
 					else {
 						tempField.setText(String.format("%c", map[i][j]));
 						tempField.setEditable(false);
 						tempField.setBackground(Color.white);
-						tempField.setForeground(Color.red);
+						tempField.setForeground(Color.orange);
 					}	
 				}
 				else {
@@ -99,6 +118,10 @@ public class MainViewController extends JFrame {
 					tempField.setForeground(Color.black);
 				}
 			}
+		coX = controller.getGenerator().getStartPointX();
+		coY = controller.getGenerator().getStartPointY();
+		mapTable[coX][coY].requestFocusInWindow();	//central point get first focus
+		mapTable[coX][coY].setBorder(new LineBorder(Color.blue,3));
 	}
 	
 	public MainViewController(Difficulty difficulty) {
@@ -123,38 +146,71 @@ public class MainViewController extends JFrame {
 		panel.setBounds(403, 20, 40*mapSize, 40*mapSize);
 		contentPane.add(panel);
 		panel.setLayout(new GridLayout(mapSize, mapSize, 0, 0));
+		
+		btnFinish = new JButton("Finish");
+		btnFinish.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				btnFinish.setEnabled(false);
+				gameStatue = GameStatus.GAMEOVER;
+				int [][] res = controller.checkAns(map, mapSize);
+				if (res == null)	{
+					JOptionPane.showMessageDialog(null, "Congratulations! You have finished all the grids correctly!");
+					for(int i = 0;i<mapSize;i++)
+						for(int j = 0;j<mapSize;j++) {
+								mapTable[i][j].setForeground(Color.green);
+						}
+				}
+				else {
+					JOptionPane.showMessageDialog(null, "Wrong answer!");
+					for(int i = 0;i<mapSize;i++)
+						for(int j = 0;j<mapSize;j++) {
+							if (res[i][j] == -1)
+								mapTable[i][j].setForeground(Color.red);
+							else
+								mapTable[i][j].setForeground(Color.green);
+						}
+				}				
+			}
+		});
+		btnFinish.setBounds(269, 627, 117, 29);
+		contentPane.add(btnFinish);
 		mapTable = new JTextField[mapSize][mapSize];
 		for(int i = 0;i<mapSize;i++)
 			for (int j = 0;j<mapSize;j++) {
 				mapTable[i][j] = new JTextField();
 				final JTextField tempField = mapTable[i][j];
 				tempField.setHorizontalAlignment(JTextField.CENTER);
+				tempField.setCaretColor(Color.white);
 				tempField.setFont(new Font("Letter", Font.BOLD, 25));
 				tempField.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 				final int tempI = i;
 				final int tempJ = j;
 				tempField.addKeyListener(new KeyListener() { 
 					public void keyTyped(KeyEvent e) {
+						if (gameStatue == GameStatus.GAMEOVER) return;
+						if (tempField.isEditable() == false) return;
 						char inputChar = e.getKeyChar();
 						
 						if(tempField.getText().length() > 0) {
 							if (inputChar <= 'z' && inputChar >= 'a')  {
 								tempField.setText("");
+								map[coX][coY] = inputChar;
 							}
 							else if (inputChar <= 'Z' && inputChar >= 'A') {
 								tempField.setText("");
 								e.setKeyChar((char) (e.getKeyChar() + 32));
+								map[coX][coY] = inputChar;
 							}
 							else e.setKeyChar('\0');
 						}
 					} 
 					public void keyPressed(KeyEvent e){
+						if (gameStatue == GameStatus.GAMEOVER) return;
 						int keyCode = e.getKeyCode();
 						switch (keyCode) {
 						case 37:	//left
 							if (tempJ == 0) {
 								mapTable[tempI][tempJ].requestFocus();
-								break;
 							}
 							else {
 								int tempLeft = tempJ-1;
@@ -168,8 +224,16 @@ public class MainViewController extends JFrame {
 										break;
 									}
 								}
-								if (find) 	mapTable[tempI][tempLeft].requestFocus();
-								else		mapTable[tempI][tempJ].requestFocus();
+								if (find) 	{ 
+									mapTable[tempI][tempLeft].requestFocus();
+									mapTable[tempI][tempLeft].setBorder(new LineBorder(Color.blue,3));
+									mapTable[coX][coY].setBorder(new LineBorder(Color.gray));
+									coX = tempI; coY = tempLeft;
+								}
+								else { 
+									mapTable[tempI][tempJ].requestFocus(); 
+									coX = tempI; coY = tempJ; 
+								}
 							}
 							break;
 							
@@ -178,7 +242,6 @@ public class MainViewController extends JFrame {
 							
 							if (tempI == 0) {
 								mapTable[tempI][tempJ].requestFocus();
-								break;
 							}
 							else {
 								int tempUp = tempI-1;
@@ -192,8 +255,16 @@ public class MainViewController extends JFrame {
 										break;
 									}
 								}
-								if (find) 	mapTable[tempUp][tempJ].requestFocus();
-								else		mapTable[tempI][tempJ].requestFocus();
+								if (find) {	
+									mapTable[tempUp][tempJ].requestFocus(); 
+									mapTable[tempUp][tempJ].setBorder(new LineBorder(Color.blue,3));
+									mapTable[coX][coY].setBorder(new LineBorder(Color.gray));
+									coX = tempUp; coY = tempJ;
+								}
+								else { 
+									mapTable[tempI][tempJ].requestFocus(); 
+									coX = tempI; coY = tempJ; 
+								}
 							}
 							break;
 							
@@ -201,7 +272,6 @@ public class MainViewController extends JFrame {
 							
 							if (tempJ == mapSize - 1) {
 								mapTable[tempI][tempJ].requestFocus();
-								break;
 							}
 							else {
 								int tempRight = tempJ+1;
@@ -215,8 +285,16 @@ public class MainViewController extends JFrame {
 										break;
 									}
 								}
-								if (find) 	mapTable[tempI][tempRight].requestFocus();
-								else		mapTable[tempI][tempJ].requestFocus();
+								if (find) {	
+									mapTable[tempI][tempRight].requestFocus();
+									mapTable[tempI][tempRight].setBorder(new LineBorder(Color.blue,3));
+									mapTable[coX][coY].setBorder(new LineBorder(Color.gray));
+									coX = tempI; coY = tempRight;
+								}
+								else {	
+									mapTable[tempI][tempJ].requestFocus(); 
+									coX = tempI; coY = tempJ; 
+								}
 							}
 							break;
 							
@@ -224,7 +302,6 @@ public class MainViewController extends JFrame {
 							
 							if (tempI == mapSize - 1) {
 								mapTable[tempI][tempJ].requestFocus();
-								break;
 							}
 							else {
 								int tempDown = tempI+1;
@@ -238,8 +315,16 @@ public class MainViewController extends JFrame {
 										break;
 									}
 								}
-								if (find) 	mapTable[tempDown][tempJ].requestFocus();
-								else		mapTable[tempI][tempJ].requestFocus();
+								if (find) {	
+									mapTable[tempDown][tempJ].requestFocus(); 
+									mapTable[tempDown][tempJ].setBorder(new LineBorder(Color.blue,3));
+									mapTable[coX][coY].setBorder(new LineBorder(Color.gray));
+									coX = tempDown; coY = tempJ;
+								}
+								else {	
+									mapTable[tempI][tempJ].requestFocus(); 
+									coX = tempI; coY = tempJ; 
+								}
 							}
 							break;
 						default:
@@ -250,13 +335,44 @@ public class MainViewController extends JFrame {
 						
 					} 
 				});
+			
+				tempField.addMouseListener(new MouseListener() {
+					
+					@Override
+					public void mouseReleased(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						mapTable[coX][coY].requestFocus();
+					}
+					
+					@Override
+					public void mousePressed(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+					
+					@Override
+					public void mouseExited(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+					
+					@Override
+					public void mouseEntered(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+					
+					@Override
+					public void mouseClicked(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+				});
 				panel.add(mapTable[i][j]);
 			}
 		
 		this.controller = ModelController.getInstance();
 		this.difficulty = difficulty;
 		this.reload();
-		
 	}
-	
 }

@@ -9,10 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-
-import org.python.antlr.PythonParser.return_stmt_return;
 
 
 public class ArticleParsing {
@@ -95,17 +92,7 @@ public class ArticleParsing {
 			 if (entry.getValue().longValue() > 0)	picked[currentPicked++] = entry.getKey().toLowerCase();
 			 if (currentPicked >= pickTime) 	break;
 		 }
-		 for(int i = 0;i<picked.length;i++)	System.out.printf("word:%s\n", picked[i]);
 		 return picked;
-	 }
-	 
-	 public void show() {
-		 Iterator<java.util.Map.Entry<String, Long>> it = freqMap.entrySet().iterator();
-		 
-		 while(it.hasNext()) {
-			 java.util.Map.Entry<String,Long> entry = it.next();
-			 System.out.printf("word:%s	freq:%d\n", entry.getKey(),entry.getValue());
-		 }
 	 }
 
 	 //filter the article, delete the non-alphabets

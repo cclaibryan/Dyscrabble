@@ -8,10 +8,14 @@ public class MapGenerator {
 	private BasicNode[][] scrabbleMap;		//the map
 	private String[] words;					//the words input
 	private boolean[] picks;				//whether the words are picked
-	private ArrayList<AnsIndex>	ans;		//store the answers
+	private ArrayList<AnsIndex>	tempAns;	//temporally store the current answers
+	private ArrayList<AnsIndex>	ans;		//store the best answers
 	
 	private Object[] indexList = new Object[26];		//database for parsing words
 	private Queue<BasicNode> waitQueue = new LinkedBlockingQueue<BasicNode>();	//BFS queue
+	
+	private int startPointX;				//first cross coordinate x
+	private int startPointY;				//first cross coordiante y
 	
 	//Assess parameters
 	float leftBound,rightBound,upBound,lowBound;
@@ -22,7 +26,7 @@ public class MapGenerator {
 	public MapGenerator(String[] words,int size) {
 		this.maxSize = size;
 		this.words = words;
-		ans = new ArrayList<MapGenerator.AnsIndex>();
+		tempAns = new ArrayList<MapGenerator.AnsIndex>();
 		for (int i = 0; i < 26; i++)  indexList[i] = new ArrayList<StoreIndex>();
 		wordsParsing();
 	}
@@ -44,11 +48,13 @@ public class MapGenerator {
 		
 		while (times>0) {
 			initMap();
+			tempAns = new ArrayList<MapGenerator.AnsIndex>();
 			
 			//choose the first cross coordinate
 			int pickX = (int)(Math.random()*6 + maxSize/2 - 3);
 			int pickY = (int)(Math.random()*6 + maxSize/2 - 3);
-					
+			
+			
 			randomInit(pickX,pickY);
 			scrabbleMap[pickX][pickY].consider = false;
 			
@@ -76,6 +82,9 @@ public class MapGenerator {
 			float thisMark = assessMap();
 			if (thisMark > totalMark) {
 				totalMark = thisMark;
+				startPointX = pickX;
+				startPointY = pickY;
+				ans = tempAns;
 				for(int i = 0;i<maxSize;i++)
 					for(int j = 0;j<maxSize;j++)
 						res[i][j] = scrabbleMap[i][j].content;
@@ -176,7 +185,7 @@ public class MapGenerator {
 		//put the word into the grid
 		picks[index.wordIndex] = true;
 		wordsUsed++;
-		ans.add(new AnsIndex(index.wordIndex,startX,startY,direction));		//add to the answers
+		tempAns.add(new AnsIndex(index.wordIndex,startX,startY,direction));		//add to the answers
 		
 		for(int xx = startX,yy = startY,i=0; i<index.length; i++, xx += vertiScale, yy += horiScale) {
 			if (scrabbleMap[xx][yy].content != '\0')	crossNum++;
@@ -342,6 +351,14 @@ public class MapGenerator {
 		return mark;
 	}
 	
+	public int getStartPointX() {
+		return startPointX;
+	}
+
+	public int getStartPointY() {
+		return startPointY;
+	}
+
 	public class BasicNode {
 		int x;					//x coordinate
 		int y;					//y coordinate

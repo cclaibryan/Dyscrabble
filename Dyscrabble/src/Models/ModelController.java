@@ -7,8 +7,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Set;
 
-import org.python.antlr.PythonParser.return_stmt_return;
-
 import Models.MapGenerator.AnsIndex;
 
 public class ModelController {
@@ -33,6 +31,9 @@ public class ModelController {
 				 instance = new ModelController();  
 			 }  
 			 return instance;  
+		}
+		public MapGenerator getGenerator() {
+			return this.generator;
 		}
 		
 		public ArticleSearcher getSearcher() {
@@ -59,18 +60,20 @@ public class ModelController {
 		}
 		
 		//check whether the input answer is correct
-		public boolean checkAns(char[][] myAns) {
+		public int[][] checkAns(char[][] myAns,int mapSize) {
+			boolean res = true;
+			int[][] resChars = new int[mapSize][mapSize];
 			Set<String> allWordsList = parser.getFreqMap().keySet();	//all the word list
 			String[] pickedWords = generator.getWords();
-			ArrayList<AnsIndex> ansInfo = generator.getAns();			//
-			
+			ArrayList<AnsIndex> ansInfo = generator.getAns();			
+
 			for(AnsIndex idx : ansInfo) {
 				int wordLength = pickedWords[idx.getWordIdx()].length();
 				int delX=0,delY=0;
 				if (idx.getDirection() == 0)	delY = 1;	//horizontally
 				else							delX = 1;	//vertically
 				
-				char[] currentInputWord = new char[100];
+				char[] currentInputWord = new char[wordLength];
 				int index = 0;
 				int x = idx.getStartX();
 				int y = idx.getStartY();
@@ -81,10 +84,35 @@ public class ModelController {
 					y += delY;
 				}
 				String outputStr = new String(currentInputWord);
-				outputStr = outputStr.trim();						//delete the '\0's
-				if (allWordsList.contains(outputStr)==false)	return false;
+				
+				if (allWordsList.contains(outputStr)==false)	{
+					res = false;
+					int idx1 = 0;
+					int x1 = idx.getStartX();
+					int y1 = idx.getStartY();
+					
+					while (idx1 < wordLength) {
+						if(resChars[x1][y1] != 1) resChars[x1][y1] = -1;		//wrong
+						x1 += delX;
+						y1 += delY;
+						idx1++;
+					}
+				}
+				else {
+					int idx1 = 0;
+					int x1 = idx.getStartX();
+					int y1 = idx.getStartY();
+					
+					while (idx1 < wordLength) {
+						resChars[x1][y1] = 1;		//right
+						x1 += delX;
+						y1 += delY;
+						idx1++;
+					}
+				}
 			}
-			return true;
+			if (res == false)	return resChars;
+			else				return null;
 		}
 	
 		//detect whether the network is available
