@@ -29,6 +29,9 @@ import Utilities.Difficulty;
 import Utilities.GameStatus;
 
 import javax.swing.JButton;
+
+import javax.swing.JLabel;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -46,6 +49,8 @@ public class MainViewController extends JFrame {
 	private ModelController controller;			//the model controller
 	
 	private JButton btnFinish;
+	private JButton btnBack;
+	private JButton btnNext;
 	
 	final int mapSize = 18;						//map size
 	private char[][] map;						//current map content
@@ -54,6 +59,9 @@ public class MainViewController extends JFrame {
 	private int coY;						//current coordinate y of focused text field
 	
 	private GameStatus gameStatue;
+	
+	private JLabel lblTime;					//the left time label
+	private JLabel lblTimeStatic;			//label showing "Time left:"
 	
 	void setDocs(JTextPane textPane, String str, Color col, boolean isBold, int fontSize) {
 		SimpleAttributeSet attset = new SimpleAttributeSet();
@@ -72,10 +80,11 @@ public class MainViewController extends JFrame {
 	public void reload() {
 		scrollPane.setViewportView(null);
 		btnFinish.setEnabled(true);
+		btnNext.setEnabled(false);
 		gameStatue = GameStatus.INGAME;
-		
+
 		//reload data
-		controller.loadElements(mapSize);	
+		controller.loadElements(mapSize,difficulty);	
 		map = controller.getMap();
 		String article = controller.getArticleString();
 		String title = controller.getTitleString();
@@ -87,9 +96,14 @@ public class MainViewController extends JFrame {
 		txtrTest.setCaretPosition(0);				//set the scroll bar on the top
 		scrollPane.setViewportView(txtrTest);
 		
+		TimingThread timingThread = new TimingThread(this, 1200);
+		timingThread.start();
+		
 		for(int i = 0;i<mapSize;i++)
 			for (int j = 0;j<mapSize;j++) {
 				JTextField tempField = mapTable[i][j];
+				tempField.setBorder(new LineBorder(Color.gray));    //reset the borders
+				
 				if (map[i][j]!= '\0') {
 					double ran = Math.random();
 					double threshold = 0;
@@ -102,6 +116,7 @@ public class MainViewController extends JFrame {
 						tempField.setEditable(true);
 						tempField.setBackground(Color.white);
 						tempField.setForeground(Color.black);
+						tempField.setText("");
 						map[i][j] = ' ';
 					}
 					else {
@@ -150,30 +165,45 @@ public class MainViewController extends JFrame {
 		btnFinish = new JButton("Finish");
 		btnFinish.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				btnFinish.setEnabled(false);
-				gameStatue = GameStatus.GAMEOVER;
-				int [][] res = controller.checkAns(map, mapSize);
-				if (res == null)	{
-					JOptionPane.showMessageDialog(null, "Congratulations! You have finished all the grids correctly!");
-					for(int i = 0;i<mapSize;i++)
-						for(int j = 0;j<mapSize;j++) {
-								mapTable[i][j].setForeground(Color.green);
-						}
-				}
-				else {
-					JOptionPane.showMessageDialog(null, "Wrong answer!");
-					for(int i = 0;i<mapSize;i++)
-						for(int j = 0;j<mapSize;j++) {
-							if (res[i][j] == -1)
-								mapTable[i][j].setForeground(Color.red);
-							else
-								mapTable[i][j].setForeground(Color.green);
-						}
-				}				
+				finishGame();
 			}
 		});
-		btnFinish.setBounds(269, 627, 117, 29);
+		btnFinish.setBounds(226, 656, 117, 29);
 		contentPane.add(btnFinish);
+		
+		btnNext = new JButton("Next");
+		btnNext.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int res = JOptionPane.showConfirmDialog(null, "Are you sure to start a new game?", "Dyscrabble",JOptionPane.YES_NO_OPTION);
+				if (res == JOptionPane.NO_OPTION)	return;
+				reload();
+			}
+		});
+		btnNext.setBounds(226, 712, 117, 29);
+		contentPane.add(btnNext);
+		
+		btnBack = new JButton("Back");
+		btnBack.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int res = JOptionPane.showConfirmDialog(null, "Are you sure to quit the game?", "Dyscrabble",JOptionPane.YES_NO_OPTION);
+				if (res == JOptionPane.NO_OPTION)	return;
+				setVisible(false);
+				StartViewController svController = new StartViewController(false);
+				svController.setVisible(true);
+				svController.getBtnStart().setEnabled(true);
+			}
+		});
+		btnBack.setBounds(61, 712, 117, 29);
+		contentPane.add(btnBack);
+		
+		lblTime = new JLabel();
+		lblTime.setBounds(99, 661, 96, 16);
+		contentPane.add(lblTime);
+		
+		lblTimeStatic = new javax.swing.JLabel("Time left: ");
+		lblTimeStatic.setBounds(26, 661, 78, 16);
+		contentPane.add(lblTimeStatic);
+		
 		mapTable = new JTextField[mapSize][mapSize];
 		for(int i = 0;i<mapSize;i++)
 			for (int j = 0;j<mapSize;j++) {
@@ -374,5 +404,59 @@ public class MainViewController extends JFrame {
 		this.controller = ModelController.getInstance();
 		this.difficulty = difficulty;
 		this.reload();
+	}
+	
+	public void finishGame() {
+		btnFinish.setEnabled(false);
+		gameStatue = GameStatus.GAMEOVER;
+		int [][] res = controller.checkAns(map, mapSize);
+		if (res == null)	{
+			JOptionPane.showMessageDialog(null, "Congratulations! You have finished all the grids correctly!");
+			for(int i = 0;i<mapSize;i++)
+				for(int j = 0;j<mapSize;j++) {
+						mapTable[i][j].setForeground(Color.green);
+				}
+		}
+		else {
+			JOptionPane.showMessageDialog(null, "Wrong answer!");
+			for(int i = 0;i<mapSize;i++)
+				for(int j = 0;j<mapSize;j++) {
+					if (res[i][j] == -1)
+						mapTable[i][j].setForeground(Color.red);
+					else
+						mapTable[i][j].setForeground(Color.green);
+				}
+		}
+		btnNext.setEnabled(true);
+	}
+	
+	public JLabel getLblTime() {
+		return this.lblTime;
+	}
+	
+	class TimingThread extends Thread {
+		private MainViewController mvController;
+		private long timing;
+		public TimingThread(MainViewController controller,long timing) {
+			this.mvController = controller;
+			this.timing = timing;
+		}
+		@Override
+		public void run() {
+			while(timing >= 0) {
+				long min = timing / 60;
+				long sec = timing % 60;
+				try {
+					sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				mvController.getLblTime().setText(String.format("%d min %d sec",min,sec));
+				timing--;
+			}
+			JOptionPane.showMessageDialog(null, "Time is up!");
+			finishGame();
+		}
 	}
 }

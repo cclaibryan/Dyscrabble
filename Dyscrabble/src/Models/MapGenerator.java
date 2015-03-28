@@ -15,7 +15,9 @@ public class MapGenerator {
 	private Queue<BasicNode> waitQueue = new LinkedBlockingQueue<BasicNode>();	//BFS queue
 	
 	private int startPointX;				//first cross coordinate x
-	private int startPointY;				//first cross coordiante y
+	private int startPointY;				//first cross coordinate y
+	
+	private int repeatTimes;						//repeat times
 	
 	//Assess parameters
 	float leftBound,rightBound,upBound,lowBound;
@@ -23,9 +25,10 @@ public class MapGenerator {
 	public float totalMark = 0f;	//highest map mark
 	
 	//constructor
-	public MapGenerator(String[] words,int size) {
+	public MapGenerator(String[] words,int size,int times) {
 		this.maxSize = size;
 		this.words = words;
+		this.repeatTimes = times;
 		tempAns = new ArrayList<MapGenerator.AnsIndex>();
 		for (int i = 0; i < 26; i++)  indexList[i] = new ArrayList<StoreIndex>();
 		wordsParsing();
@@ -44,7 +47,7 @@ public class MapGenerator {
 		
 		char[][] res = new char[maxSize][maxSize];
 		
-		float times = 8000;
+		float times = repeatTimes;
 		
 		while (times>0) {
 			initMap();
@@ -68,7 +71,6 @@ public class MapGenerator {
 				
 				for(int i = 0;i<storeIdxArray.size();i++) {
 					StoreIndex temp = storeIdxArray.get(i);
-					
 					if (picks[temp.wordIndex] == true)	continue;
 					
 					if(tempNode.horizontal == 1)	put(tempNode.x, tempNode.y, temp, 1);

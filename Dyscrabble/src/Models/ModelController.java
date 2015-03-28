@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import Models.MapGenerator.AnsIndex;
+import Utilities.Difficulty;
 
 public class ModelController {
 		
@@ -45,7 +46,7 @@ public class ModelController {
 		}
 		
 		//size: the length of a side of the map
-		public void loadElements(int size) {
+		public void loadElements(int size,Difficulty diff) {
 			this.mapSize = size;
 			
 			//words parsing
@@ -55,7 +56,18 @@ public class ModelController {
 			String[] words = parser.pickWords();
 			
 			//map generation
-			generator = new MapGenerator(words,this.mapSize);
+			int repeatTimes;
+			switch (diff) {
+			case Easy:
+				repeatTimes = 2000;
+				break;
+			case Medium:
+				repeatTimes = 4000;
+			default:
+				repeatTimes = 8000;
+				break;
+			}
+			generator = new MapGenerator(words,this.mapSize,repeatTimes);
 			map = generator.getMap();
 		}
 		
@@ -122,8 +134,9 @@ public class ModelController {
 				String line = null;  
 				InputStream is = null;  
 				InputStreamReader isr = null;  
-				BufferedReader br = null;  
-				String ip="http://www.thestandard.com.hk";  //ping address
+				BufferedReader br = null;
+				String ip = "www.sina.com.cn";
+//				String ip="http://www.thestandard.com.hk";  //ping address
 				try  
 				{  
 					process = runtime.exec("ping -c 3 "+ip);  
@@ -131,10 +144,11 @@ public class ModelController {
 					isr = new InputStreamReader(is);  
 					br = new BufferedReader(isr);  
 					int lineNum = 0;
+					
 					while((line = br.readLine()) != null && lineNum < 4) {
 						System.out.println(line);
 						System.out.flush();
-						lineNum++;  
+						lineNum++;
 					}
 					is.close();  
 					isr.close();  
