@@ -19,7 +19,7 @@ public class ModelController {
 		private String titleString;
 		
 		private MapGenerator generator;		//map generator
-		private ArticleParsing parser;		//article parser
+		private ArticleParser parser;		//article parser
 		
 		private ArticleSearcher searcher;
 		
@@ -50,7 +50,7 @@ public class ModelController {
 			this.mapSize = size;
 			
 			//words parsing
-			parser = new ArticleParsing("articles/" + searcher.pickArticle());
+			parser = new ArticleParser("articles/" + searcher.pickArticle());
 			articleString = parser.getArtileString();
 			titleString = parser.getTitleString();
 			String[] words = parser.pickWords();
