@@ -48,9 +48,9 @@ public class ArticleSearcher extends Observable{
 //		interpreter.execfile("articles/Crawler.py");
 //		PyFunction func = (PyFunction)interpreter.get("searchBreakingNews", PyFunction.class);
 //		func.__call__(new PyInteger(40));
-		
+			
 		try {
-			int getArtNum = 5;
+			int getArtNum = 15;
 
 			Process process = Runtime.getRuntime().exec(String.format("./articles/Crawler.py %d", getArtNum));
 			
