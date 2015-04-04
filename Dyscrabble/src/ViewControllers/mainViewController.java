@@ -63,6 +63,8 @@ public class MainViewController extends JFrame {
 	private JLabel lblTime;					//the left time label
 	private JLabel lblTimeStatic;			//label showing "Time left:"
 	
+	TimingThread timingThread;				//the timing thread
+	
 	void setDocs(JTextPane textPane, String str, Color col, boolean isBold, int fontSize) {
 		SimpleAttributeSet attset = new SimpleAttributeSet();
 		StyleConstants.setForeground(attset	, col);
@@ -96,7 +98,7 @@ public class MainViewController extends JFrame {
 		txtrTest.setCaretPosition(0);				//set the scroll bar on the top
 		scrollPane.setViewportView(txtrTest);
 		
-		TimingThread timingThread = new TimingThread(this, 1200);
+		timingThread = new TimingThread(this, 1200);
 		timingThread.start();
 		
 		for(int i = 0;i<mapSize;i++)
@@ -162,48 +164,6 @@ public class MainViewController extends JFrame {
 		contentPane.add(panel);
 		panel.setLayout(new GridLayout(mapSize, mapSize, 0, 0));
 		
-		btnFinish = new JButton("Finish");
-		btnFinish.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				finishGame();
-			}
-		});
-		btnFinish.setBounds(226, 656, 117, 29);
-		contentPane.add(btnFinish);
-		
-		btnNext = new JButton("Next");
-		btnNext.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				int res = JOptionPane.showConfirmDialog(null, "Are you sure to start a new game?", "Dyscrabble",JOptionPane.YES_NO_OPTION);
-				if (res == JOptionPane.NO_OPTION)	return;
-				reload();
-			}
-		});
-		btnNext.setBounds(226, 712, 117, 29);
-		contentPane.add(btnNext);
-		
-		btnBack = new JButton("Back");
-		btnBack.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				int res = JOptionPane.showConfirmDialog(null, "Are you sure to quit the game?", "Dyscrabble",JOptionPane.YES_NO_OPTION);
-				if (res == JOptionPane.NO_OPTION)	return;
-				setVisible(false);
-				StartViewController svController = new StartViewController(false);
-				svController.setVisible(true);
-				svController.getBtnStart().setEnabled(true);
-			}
-		});
-		btnBack.setBounds(61, 712, 117, 29);
-		contentPane.add(btnBack);
-		
-		lblTime = new JLabel();
-		lblTime.setBounds(99, 661, 96, 16);
-		contentPane.add(lblTime);
-		
-		lblTimeStatic = new javax.swing.JLabel("Time left: ");
-		lblTimeStatic.setBounds(26, 661, 78, 16);
-		contentPane.add(lblTimeStatic);
-		
 		mapTable = new JTextField[mapSize][mapSize];
 		for(int i = 0;i<mapSize;i++)
 			for (int j = 0;j<mapSize;j++) {
@@ -220,19 +180,17 @@ public class MainViewController extends JFrame {
 						if (gameStatue == GameStatus.GAMEOVER) return;
 						if (tempField.isEditable() == false) return;
 						char inputChar = e.getKeyChar();
-						
-						if(tempField.getText().length() > 0) {
-							if (inputChar <= 'z' && inputChar >= 'a')  {
-								tempField.setText("");
-								map[coX][coY] = inputChar;
-							}
-							else if (inputChar <= 'Z' && inputChar >= 'A') {
-								tempField.setText("");
-								e.setKeyChar((char) (e.getKeyChar() + 32));
-								map[coX][coY] = inputChar;
-							}
-							else e.setKeyChar('\0');
+
+						if (inputChar <= 'z' && inputChar >= 'a')  {
+							tempField.setText("");
+							map[coX][coY] = inputChar;
 						}
+						else if (inputChar <= 'Z' && inputChar >= 'A') {
+							tempField.setText("");
+							e.setKeyChar((char) (e.getKeyChar() + 32));
+							map[coX][coY] = inputChar;
+						}
+						else e.setKeyChar('\0');
 					} 
 					public void keyPressed(KeyEvent e){
 						if (gameStatue == GameStatus.GAMEOVER) return;
@@ -401,6 +359,48 @@ public class MainViewController extends JFrame {
 				panel.add(mapTable[i][j]);
 			}
 		
+		btnFinish = new JButton("Finish");
+		btnFinish.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				finishGame();
+			}
+		});
+		btnFinish.setBounds(226, 656, 117, 29);
+		contentPane.add(btnFinish);
+		
+		btnNext = new JButton("Next");
+		btnNext.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int res = JOptionPane.showConfirmDialog(null, "Are you sure to start a new game?", "Dyscrabble",JOptionPane.YES_NO_OPTION);
+				if (res == JOptionPane.NO_OPTION)	return;
+				reload();
+			}
+		});
+		btnNext.setBounds(226, 712, 117, 29);
+		contentPane.add(btnNext);
+		
+		btnBack = new JButton("Back");
+		btnBack.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int res = JOptionPane.showConfirmDialog(null, "Are you sure to quit the game?", "Dyscrabble",JOptionPane.YES_NO_OPTION);
+				if (res == JOptionPane.NO_OPTION)	return;
+				setVisible(false);
+				StartViewController svController = new StartViewController(false);
+				svController.setVisible(true);
+				svController.getBtnStart().setEnabled(true);
+			}
+		});
+		btnBack.setBounds(61, 712, 117, 29);
+		contentPane.add(btnBack);
+		
+		lblTime = new JLabel();
+		lblTime.setBounds(99, 661, 96, 16);
+		contentPane.add(lblTime);
+		
+		lblTimeStatic = new javax.swing.JLabel("Time left: ");
+		lblTimeStatic.setBounds(26, 661, 78, 16);
+		contentPane.add(lblTimeStatic);
+
 		this.controller = ModelController.getInstance();
 		this.difficulty = difficulty;
 		this.reload();
@@ -444,6 +444,7 @@ public class MainViewController extends JFrame {
 		@Override
 		public void run() {
 			while(timing >= 0) {
+				if(gameStatue == GameStatus.GAMEOVER)	return;
 				long min = timing / 60;
 				long sec = timing % 60;
 				try {

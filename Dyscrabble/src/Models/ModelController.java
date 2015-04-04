@@ -6,9 +6,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import Models.MapGenerator.AnsIndex;
 import Utilities.Difficulty;
+import Utilities.NetworkStatus;
 
 public class ModelController {
 		
@@ -22,6 +25,7 @@ public class ModelController {
 		private ArticleParser parser;		//article parser
 		
 		private ArticleSearcher searcher;
+		private int dlArtsNum = 5;				//number of articles need download 
 		
 		private ModelController() {
 			searcher = ArticleSearcher.getInstance();
@@ -42,7 +46,7 @@ public class ModelController {
 		}
 		
 		public void crawl() {
-			searcher.callCrawler();
+			searcher.callCrawler(dlArtsNum);
 		}
 		
 		//size: the length of a side of the map
@@ -76,6 +80,9 @@ public class ModelController {
 			boolean res = true;
 			int[][] resChars = new int[mapSize][mapSize];
 			Set<String> allWordsList = parser.getFreqMap().keySet();	//all the word list
+			
+			for(String str : allWordsList)	System.out.println(str);
+			
 			String[] pickedWords = generator.getWords();
 			ArrayList<AnsIndex> ansInfo = generator.getAns();			
 
@@ -128,42 +135,68 @@ public class ModelController {
 		}
 	
 		//detect whether the network is available
-		public boolean netDetect() {
+		public NetworkStatus netDetect() {
+			
 				Runtime runtime = Runtime.getRuntime();  
 				Process process = null;  
 				String line = null;  
 				InputStream is = null;  
 				InputStreamReader isr = null;  
 				BufferedReader br = null;
-				String ip = "www.sina.com.cn";
-//				String ip="http://www.thestandard.com.hk";  //ping address
+				String ip = "www.sina.com.hk";
+//				String ip = "www.thestandard.com.hk";
 				try  
 				{  
-					process = runtime.exec("ping -c 3 "+ip);  
+					process = runtime.exec("ping -c 4 "+ip);
 					is = process.getInputStream();  
 					isr = new InputStreamReader(is);  
 					br = new BufferedReader(isr);  
-					int lineNum = 0;
+					int success = 0;
+					int timeout = 0;
 					
-					while((line = br.readLine()) != null && lineNum < 4) {
+					Pattern successPattern = Pattern.compile("time=\\d(.*)ms");
+					Pattern timeoutPattern = Pattern.compile("timeout");
+					
+					float totalTime = 0f;
+					while((line = br.readLine()) != null) {
 						System.out.println(line);
 						System.out.flush();
-						lineNum++;
+						
+						Matcher m = successPattern.matcher(line);
+						if (m.find()) {
+							String foundString = m.group();
+							totalTime += Float.parseFloat(foundString.split("=| ")[1]);
+							success++;
+						}
+						Matcher m2 = timeoutPattern.matcher(line);
+						if (m2.find()) {
+							timeout++;
+						}
 					}
 					is.close();  
 					isr.close();  
 					br.close(); 
-					if (lineNum >= 4)	{
-						return true;
+					
+					if (success > 2)	{
+						float aveTime = totalTime / 4;
+						System.out.println("ave time:" + String.format("%f", aveTime));
+						setDlArtsNum(aveTime);
+						return NetworkStatus.AVAILABLE;
+					}
+					else if (timeout > 2) {
+						return NetworkStatus.TIMEOUT;
 					}
 				}  
 				catch(IOException  e)  
 				{  
 					System.out.println(e);  
-					return false;  
+					return NetworkStatus.UNAVAILABLE;  
 				}
-				return false;
+				System.out.println(666);
+				return NetworkStatus.UNAVAILABLE;
 		}
+		
+		
 		public char[][] getMap() {
 			return map;
 		}
@@ -173,5 +206,21 @@ public class ModelController {
 		}
 		public String getTitleString() {
 			return titleString;
+		}
+
+		public int getDlArtsNum() {
+			return dlArtsNum;
+		}
+
+		public void setDlArtsNum(float aveTime) {
+			int myDlArtsNum = 0;
+			
+			if (aveTime < 30)		myDlArtsNum = 50;
+			else if(aveTime < 50)	myDlArtsNum = 30;
+			else if (aveTime < 100)	myDlArtsNum = 10;
+			else					myDlArtsNum = 5;
+			
+			System.out.println("download num:" + String.format("%d", myDlArtsNum));
+			this.dlArtsNum = myDlArtsNum;
 		}
 }

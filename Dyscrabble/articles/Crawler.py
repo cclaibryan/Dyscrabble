@@ -35,6 +35,7 @@ def searchBreakingNews(runTimes) :
 	currentTime =  time.strftime('%H:%M:%S %Y-%m-%d',time.localtime(time.time()))	#get current time
 
 	#request for the main page 
+	print "Reading main page content"
 	response = myURLOpen(baseURL)
 	mainPageContent = response.read()
 	
@@ -70,6 +71,7 @@ def searchBreakingNews(runTimes) :
 		sys.stdout.flush()		#important!!!!! To make sure that java can read immediately
 
 		content = myURLOpen(currentUrl).read()
+		print "Finished"
 		reList = getContentURL(content)
 
 		for i in reList:
@@ -118,7 +120,7 @@ def searchBreakingNews(runTimes) :
 #url request with try and except
 def myURLOpen(url) :
 	request = urllib2.Request(url)
-	try: response = urllib2.urlopen(request)
+	try: response = urllib2.urlopen(request, timeout = 3)
 	except urllib2.URLError, e:
 		if hasattr(e,'code'):
 			print e.code
@@ -151,6 +153,7 @@ def getContentURL(content):
 	return reList
 
 #get the first para to be the run times
+print "Crawler running..."
 searchBreakingNews(int(sys.argv[1]))
 
 

@@ -9,8 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Map;
-
+import java.util.Map.Entry;
 
 public class ArticleParser {
 	
@@ -72,26 +71,28 @@ public class ArticleParser {
 	 }
 	 
 	 public String[] pickWords() {
-		 String[] picked = new String[15];
+		 int pickNumber = 15;
+		 String[] picked = new String[pickNumber];
 		 
-		 ArrayList<Map.Entry<String, Long>> listData = new ArrayList<Map.Entry<String,Long>>(freqMap.entrySet());
-		 Collections.sort(listData, new Comparator<Map.Entry<String, Long>>() {
+		 ArrayList<Entry<String, Long>> listData = new ArrayList<Entry<String,Long>>(freqMap.entrySet());
+		 Collections.sort(listData, new Comparator<Entry<String, Long>>() {
 
 			@Override
-			public int compare(java.util.Map.Entry<String, Long> o1,
-					java.util.Map.Entry<String, Long> o2) {
+			public int compare(Entry<String, Long> o1,
+					Entry<String, Long> o2) {
 				if (o1.getValue().longValue() > o2.getValue().longValue())	return 1;
 				else if (o1.getValue().longValue() == o2.getValue().longValue())	return 0;
 				else return -1;
 			}
 		});
 		 
-		 int pickTime = 15;
+		 int pickTime = pickNumber;
 		 int currentPicked = 0;
-		 for(Map.Entry<String, Long> entry:listData) {
+		 for(Entry<String, Long> entry:listData) {
 			 if (entry.getValue().longValue() > 0)	picked[currentPicked++] = entry.getKey().toLowerCase();
 			 if (currentPicked >= pickTime) 	break;
 		 }
+		 
 		 return picked;
 	 }
 

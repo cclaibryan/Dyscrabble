@@ -13,6 +13,7 @@ import javax.swing.text.StyledDocument;
 import javax.swing.JButton;
 import Models.ModelController;
 import Utilities.Difficulty;
+import Utilities.NetworkStatus;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -165,8 +166,9 @@ public class StartViewController extends JFrame implements Observer, ActionListe
 		@Override
 		public void run() {
 			ModelController controller = frame.getController();
-			frame.getTextPane().setText("Network detecting......");
-			if (controller.netDetect()) {
+			frame.getTextPane().setText("Network detecting...");
+			NetworkStatus status = controller.netDetect();
+			if (status == NetworkStatus.AVAILABLE) {
 				frame.getTextPane().setText("Network is available.");
 				try {
 					sleep(1000);
@@ -178,8 +180,10 @@ public class StartViewController extends JFrame implements Observer, ActionListe
 				frame.getController().crawl();
 				frame.getTextPane().setText("Data preparation Finished!");
 			}
-			else 
+			else if (status == NetworkStatus.UNAVAILABLE)
 				frame.getTextPane().setText("Network is not available!");
+			else if (status == NetworkStatus.TIMEOUT)
+				frame.getTextPane().setText("Network connection timeout!");
 			
 			frame.getBtnStart().setEnabled(true);
 		}

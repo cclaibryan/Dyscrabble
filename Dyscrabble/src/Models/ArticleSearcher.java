@@ -42,7 +42,7 @@ public class ArticleSearcher extends Observable{
 	}
 	
 	//invoke the crawler
-	public void callCrawler() {
+	public void callCrawler(int times) {
 //		jython api can not recognize python encode('iso-8859-1'), so do not use this
 //		PythonInterpreter interpreter = new PythonInterpreter();
 //		interpreter.execfile("articles/Crawler.py");
@@ -50,9 +50,7 @@ public class ArticleSearcher extends Observable{
 //		func.__call__(new PyInteger(40));
 			
 		try {
-			int getArtNum = 15;
-
-			Process process = Runtime.getRuntime().exec(String.format("./articles/Crawler.py %d", getArtNum));
+			Process process = Runtime.getRuntime().exec(String.format("./articles/Crawler.py %d", times));
 			
 			InputStream is = process.getInputStream();  
 			InputStreamReader isr = new InputStreamReader(is);  
