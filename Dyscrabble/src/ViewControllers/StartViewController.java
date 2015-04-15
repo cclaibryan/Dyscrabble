@@ -2,7 +2,10 @@ package ViewControllers;
 
 import java.awt.Color;
 import java.awt.EventQueue;
+
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
@@ -11,6 +14,7 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import javax.swing.JButton;
+
 import Models.ModelController;
 import Utilities.Difficulty;
 import Utilities.NetworkStatus;
@@ -67,34 +71,43 @@ public class StartViewController extends JFrame implements Observer, ActionListe
 	private void loadComponents() {
 		setTitle("Dyscrabble");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 466, 300);
+		setBounds(100, 100, 800, 586);
+		
+		ImageIcon image = new ImageIcon("src/Images/Welcome.png");
+		JLabel imageLbl = new JLabel(image);
+		
+		getLayeredPane().add(imageLbl, new Integer(Integer.MIN_VALUE));
+		imageLbl.setBounds(0, 0, image.getIconWidth(), image.getIconHeight());
+		
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
+		contentPane.setOpaque(false);
 		
 		//button definitions
-		btnStart = new JButton("Start");
-		btnStart.setBounds(174, 107, 117, 29);
-		contentPane.add(btnStart);
 		
+		btnStart = new JButton("Start");
+		btnStart.setBounds(341, 240, 117, 29);
+		contentPane.add(btnStart);
+	
 		btnEasy = new JButton("Easy");
 		btnEasy.addActionListener(this);
-		btnEasy.setBounds(30, 162, 117, 29);
+		btnEasy.setBounds(111, 240, 117, 29);
 		contentPane.add(btnEasy);
 		
 		btnMedium = new JButton("Medium");
 		btnMedium.addActionListener(this);
-		btnMedium.setBounds(174, 162, 117, 29);
+		btnMedium.setBounds(341, 240, 117, 29);
 		contentPane.add(btnMedium);
 		
 		btnHard = new JButton("Difficult");
 		btnHard.addActionListener(this);
-		btnHard.setBounds(321, 162, 117, 29);
+		btnHard.setBounds(583, 240, 117, 29);
 		contentPane.add(btnHard);
 		
 		btnBack = new JButton("Back");
-		btnBack.setBounds(174, 203, 117, 29);
+		btnBack.setBounds(341, 294, 117, 29);
 		contentPane.add(btnBack);
 		
 		//difficulty buttons are not visible at first
@@ -139,7 +152,7 @@ public class StartViewController extends JFrame implements Observer, ActionListe
 		
 		textPane.setBorder(new EmptyBorder(0,0,0,0));
 		textPane.setText("Enjoy yourself with Dyscrabble!");
-		textPane.setBounds(0, 242, 466, 36);
+		textPane.setBounds(0, 546, 800, 36);
 		textPane.setBackground(new Color(237, 209, 166));
 		textPane.setEditable(false);
 		

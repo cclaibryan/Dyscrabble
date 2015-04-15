@@ -81,7 +81,7 @@ public class ModelController {
 			int[][] resChars = new int[mapSize][mapSize];
 			Set<String> allWordsList = parser.getFreqMap().keySet();	//all the word list
 			
-			for(String str : allWordsList)	System.out.println(str);
+//			for(String str : allWordsList)	System.out.println(str);
 			
 			String[] pickedWords = generator.getWords();
 			ArrayList<AnsIndex> ansInfo = generator.getAns();			
@@ -159,8 +159,6 @@ public class ModelController {
 					
 					float totalTime = 0f;
 					while((line = br.readLine()) != null) {
-						System.out.println(line);
-						System.out.flush();
 						
 						Matcher m = successPattern.matcher(line);
 						if (m.find()) {
@@ -179,7 +177,7 @@ public class ModelController {
 					
 					if (success > 2)	{
 						float aveTime = totalTime / 4;
-						System.out.println("ave time:" + String.format("%f", aveTime));
+//						System.out.println("ave time:" + String.format("%f", aveTime));
 						setDlArtsNum(aveTime);
 						return NetworkStatus.AVAILABLE;
 					}
@@ -192,7 +190,6 @@ public class ModelController {
 					System.out.println(e);  
 					return NetworkStatus.UNAVAILABLE;  
 				}
-				System.out.println(666);
 				return NetworkStatus.UNAVAILABLE;
 		}
 		
@@ -220,7 +217,7 @@ public class ModelController {
 			else if (aveTime < 100)	myDlArtsNum = 10;
 			else					myDlArtsNum = 5;
 			
-			System.out.println("download num:" + String.format("%d", myDlArtsNum));
+//			System.out.println("download num:" + String.format("%d", myDlArtsNum));
 			this.dlArtsNum = myDlArtsNum;
 		}
 }

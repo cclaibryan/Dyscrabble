@@ -2,6 +2,7 @@ package ViewControllers;
 
 import java.awt.Color;
 import java.awt.Font;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -11,6 +12,7 @@ import javax.swing.text.Document;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
@@ -116,16 +118,18 @@ public class MainViewController extends JFrame {
 					}
 					if (ran > threshold) {
 						tempField.setEditable(true);
-						tempField.setBackground(Color.white);
+						tempField.setBackground(new Color(203,164,113));
 						tempField.setForeground(Color.black);
+						tempField.setOpaque(true);
 						tempField.setText("");
 						map[i][j] = ' ';
 					}
 					else {
 						tempField.setText(String.format("%c", map[i][j]));
 						tempField.setEditable(false);
-						tempField.setBackground(Color.white);
+						tempField.setBackground(new Color(137,91,51));
 						tempField.setForeground(Color.orange);
+						tempField.setOpaque(true);
 					}	
 				}
 				else {
@@ -133,6 +137,7 @@ public class MainViewController extends JFrame {
 					tempField.setEditable(false);
 					tempField.setBackground(Color.gray);
 					tempField.setForeground(Color.black);
+					tempField.setOpaque(false);
 				}
 			}
 		coX = controller.getGenerator().getStartPointX();
@@ -150,6 +155,12 @@ public class MainViewController extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
+		contentPane.setOpaque(false);
+		
+		ImageIcon backgroundIcon = new ImageIcon("src/Images/MainImage.jpg");
+		JLabel backgroundLbl = new JLabel(backgroundIcon);
+		getLayeredPane().add(backgroundLbl, new Integer(Integer.MIN_VALUE));
+		backgroundLbl.setBounds(0, 0, backgroundIcon.getIconWidth(), backgroundIcon.getIconHeight());
 		
 		//initiate the scroll pane
 		scrollPane = new JScrollPane();
@@ -170,7 +181,7 @@ public class MainViewController extends JFrame {
 				mapTable[i][j] = new JTextField();
 				final JTextField tempField = mapTable[i][j];
 				tempField.setHorizontalAlignment(JTextField.CENTER);
-				tempField.setCaretColor(Color.white);
+				tempField.setCaretColor(new Color(203,164,113));
 				tempField.setFont(new Font("Letter", Font.BOLD, 25));
 				tempField.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 				final int tempI = i;

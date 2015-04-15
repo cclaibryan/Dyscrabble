@@ -40,7 +40,7 @@ public class ArticleParser {
 					}
 					else {
 						artileString += lineTxt;
-						artileString += "\n\n";
+						artileString += "\n";
 					}
 					parse(lineTxt);
 	            }
